@@ -6,6 +6,7 @@
 
 Планируется использовать ядро как Go-модуль в [Scientific MLOps Platform](https://github.com/m1ssha/scientific-mlops-platform). Разделение репозиториев не требует разделения на два сетевых сервиса. Локальный CLI и файловые адаптеры позволят проверять ядро отдельно от платформы.
 
+- [Предлагаемые архитектурные решения (ADR)](docs/adr/README.md)
 - [Архитектура и жизненный цикл версии](docs/architecture.md)
 - [Компонентная карта и контракты](docs/components.md)
 - [SVG-карта](docs/component-map.svg)
