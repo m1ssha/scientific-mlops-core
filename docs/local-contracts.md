@@ -18,8 +18,31 @@ characters, Size = nonnegative int64. Size is verified metadata, not part of the
 physical content address. Unsupported algorithm, uppercase/short/invalid digest
 or negative size is invalid input. Zero-byte objects are valid.
 
-The object.Store interface has these semantics (exact exported spellings are
-established by the implementation and documented before merge):
+The first slice freezes these exported signatures in package object:
+
+```go
+type Ref struct {
+    Algorithm string `json:"algorithm"`
+    Digest    string `json:"digest"`
+    Size      int64  `json:"size"`
+}
+func (ref Ref) Validate() error
+type Store interface {
+    Put(context.Context, Ref, io.Reader) (Ref, error)
+    Verify(context.Context, Ref) error
+    Open(context.Context, Ref) (io.ReadCloser, error)
+}
+```
+
+Package storage/local exports New(root string) (*Store, error). It initializes
+an absent root and object/staging directories, rejects an invalid/unsafe existing
+layout, and never repairs or deletes existing objects. Each store root is one
+research repository. Empty root strings are invalid input. Constructor failures
+remain errors, not an empty usable store. Methods are safe for concurrent calls.
+Package object exports ErrInvalidRef, ErrNotFound, ErrIntegrity, ErrStorage and
+ErrUncertain for errors.Is; wrapped context errors preserve their identity.
+
+The object.Store interface has these semantics:
 
 | Operation | Contract |
 | --- | --- |
@@ -68,6 +91,15 @@ error. Exit 2 is usage/invalid input, exit 1 is operational failure. Get verifie
 before creating a destination, creates a new regular file without replacement,
 and removes its newly created output on copy failure. It never executes code.
 The output parent is a caller-selected trusted existing directory.
+
+The exact success shape is {"object":{"algorithm":"sha256","digest":"...",
+"size":0}}; get additionally includes an "output" string. The ellipsis above
+is explanatory, not a valid digest. Errors have shape
+{"error":{"code":"integrity","message":"..."}} with stable codes:
+invalid_input, not_found, integrity, storage, uncertain, cancelled, deadline,
+and conflict (an existing get destination). Message text is diagnostic, not an
+API to parse. CLI unknown commands/flags and missing/invalid arguments use
+invalid_input and exit 2. No success bytes may precede verification failure.
 
 Required checks: empty/binary/multi-buffer stream; wrong size/hash; invalid
 reference; interrupted reader; cancellation; missing/corrupt object; existing
