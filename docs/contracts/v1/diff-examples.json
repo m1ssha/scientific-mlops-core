@@ -1,0 +1,49 @@
+[
+  {
+    "schema_version": 1,
+    "view_sequence": 6,
+    "kind": "dataset",
+    "left_id": "00000000000000000000000000000001",
+    "right_id": "00000000000000000000000000000006",
+    "changes": [
+      {
+        "path": "/files/data.csv",
+        "kind": "removed",
+        "left": {
+          "algorithm": "sha256",
+          "digest": "029d219a9e8821f0c9065b679aebde4b483c7eceac78601ebd7bb2f0f66385bd",
+          "size": 13
+        },
+        "right": null,
+        "delta": null
+      },
+      {
+        "path": "/files/renamed.csv",
+        "kind": "added",
+        "left": null,
+        "right": {
+          "algorithm": "sha256",
+          "digest": "029d219a9e8821f0c9065b679aebde4b483c7eceac78601ebd7bb2f0f66385bd",
+          "size": 13
+        },
+        "delta": null
+      }
+    ]
+  },
+  {
+    "schema_version": 1,
+    "view_sequence": 6,
+    "kind": "run",
+    "left_id": "00000000000000000000000000000003",
+    "right_id": "00000000000000000000000000000004",
+    "changes": [
+      {
+        "path": "/provenance/source_run_id",
+        "kind": "changed",
+        "left": null,
+        "right": "00000000000000000000000000000003",
+        "delta": null
+      }
+    ]
+  }
+]

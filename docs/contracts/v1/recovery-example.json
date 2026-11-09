@@ -1,0 +1,397 @@
+{
+  "schema_version": 1,
+  "repository_id": "00000000000000000000000000000064",
+  "view_sequence": 6,
+  "source_run_id": "00000000000000000000000000000003",
+  "snapshot_id": "00000000000000000000000000000002",
+  "checked_at": "2026-01-01T00:00:00Z",
+  "coverage": "declared_only",
+  "conditions": {
+    "predecessor_id": null,
+    "profile_id": "contract-fixture-v1",
+    "inputs": [
+      {
+        "role": "train",
+        "dataset_id": "00000000000000000000000000000001",
+        "target_prefix": "data"
+      }
+    ],
+    "code": {
+      "repository": "https://example.invalid/fixture.git",
+      "commit": "1111111111111111111111111111111111111111",
+      "entry_point": "src/train.py"
+    },
+    "parameters": {
+      "seed": {
+        "type": "integer",
+        "value": 1
+      }
+    },
+    "split": {
+      "description": "Synthetic contract fixture; no evaluation protocol.",
+      "materials": [
+        "split"
+      ]
+    },
+    "environment": {
+      "description": "Synthetic runtime descriptor, not a chosen ML environment.",
+      "materials": [
+        "environment",
+        "package"
+      ],
+      "conditions": {
+        "runtime_family": {
+          "type": "string",
+          "value": "fixture-runtime"
+        }
+      }
+    },
+    "materials": [
+      {
+        "name": "code",
+        "purpose": "code",
+        "required": true,
+        "path": "src/train.py",
+        "source": {
+          "kind": "object",
+          "object": {
+            "algorithm": "sha256",
+            "digest": "2340d3ed2b8b5254e344a01e9ef967fee5c9062e62f11740b2d160fff63652d1",
+            "size": 38
+          }
+        }
+      },
+      {
+        "name": "environment",
+        "purpose": "environment",
+        "required": true,
+        "path": "env.lock",
+        "source": {
+          "kind": "object",
+          "object": {
+            "algorithm": "sha256",
+            "digest": "fed18bebc2a4b68d0a942ea29cb4c4e6b4b96151ac9f1d47f4a21a149168ed16",
+            "size": 16
+          }
+        }
+      },
+      {
+        "name": "package",
+        "purpose": "dependency",
+        "required": true,
+        "path": "packages/fixture-package",
+        "source": {
+          "kind": "external",
+          "locator": "https://example.invalid/fixture-package",
+          "expected_object": null
+        }
+      },
+      {
+        "name": "split",
+        "purpose": "split",
+        "required": true,
+        "path": "split.json",
+        "source": {
+          "kind": "object",
+          "object": {
+            "algorithm": "sha256",
+            "digest": "15ce28bbb2ef064e121f421528db10c4eecd461675242e53f6d2516b9156910f",
+            "size": 24
+          }
+        }
+      }
+    ]
+  },
+  "materials": [
+    {
+      "key": "input:train:data.csv",
+      "path": "data/data.csv",
+      "purpose": "input",
+      "required": true,
+      "source": {
+        "kind": "object",
+        "object": {
+          "algorithm": "sha256",
+          "digest": "029d219a9e8821f0c9065b679aebde4b483c7eceac78601ebd7bb2f0f66385bd",
+          "size": 13
+        }
+      },
+      "check": "verified",
+      "checked_at": "2026-01-01T00:00:00Z",
+      "detail": null
+    },
+    {
+      "key": "material:code",
+      "path": "src/train.py",
+      "purpose": "code",
+      "required": true,
+      "source": {
+        "kind": "object",
+        "object": {
+          "algorithm": "sha256",
+          "digest": "2340d3ed2b8b5254e344a01e9ef967fee5c9062e62f11740b2d160fff63652d1",
+          "size": 38
+        }
+      },
+      "check": "verified",
+      "checked_at": "2026-01-01T00:00:00Z",
+      "detail": null
+    },
+    {
+      "key": "material:environment",
+      "path": "env.lock",
+      "purpose": "environment",
+      "required": true,
+      "source": {
+        "kind": "object",
+        "object": {
+          "algorithm": "sha256",
+          "digest": "fed18bebc2a4b68d0a942ea29cb4c4e6b4b96151ac9f1d47f4a21a149168ed16",
+          "size": 16
+        }
+      },
+      "check": "corrupt",
+      "checked_at": "2026-01-01T00:00:00Z",
+      "detail": "Synthetic corrupt case."
+    },
+    {
+      "key": "material:package",
+      "path": "packages/fixture-package",
+      "purpose": "dependency",
+      "required": true,
+      "source": {
+        "kind": "external",
+        "locator": "https://example.invalid/fixture-package",
+        "expected_object": null
+      },
+      "check": "unchecked",
+      "checked_at": null,
+      "detail": "Synthetic unchecked case."
+    },
+    {
+      "key": "material:split",
+      "path": "split.json",
+      "purpose": "split",
+      "required": true,
+      "source": {
+        "kind": "object",
+        "object": {
+          "algorithm": "sha256",
+          "digest": "15ce28bbb2ef064e121f421528db10c4eecd461675242e53f6d2516b9156910f",
+          "size": 24
+        }
+      },
+      "check": "missing",
+      "checked_at": "2026-01-01T00:00:00Z",
+      "detail": "Synthetic missing case."
+    },
+    {
+      "key": "output:output.txt",
+      "path": "output.txt",
+      "purpose": "original_output",
+      "required": false,
+      "source": {
+        "kind": "object",
+        "object": {
+          "algorithm": "sha256",
+          "digest": "4d3ac42b53378ed2def23b3bf88787f9fffed17b22bd42ce971d7067dc591dab",
+          "size": 15
+        }
+      },
+      "check": "io_error",
+      "checked_at": "2026-01-01T00:00:00Z",
+      "detail": "Synthetic permission error; not absence."
+    }
+  ],
+  "blockers": [
+    {
+      "material_key": "material:environment",
+      "code": "corrupt",
+      "message": "Synthetic corrupt case."
+    },
+    {
+      "material_key": "material:package",
+      "code": "unchecked",
+      "message": "Synthetic unchecked case."
+    },
+    {
+      "material_key": "material:split",
+      "code": "missing",
+      "message": "Synthetic missing case."
+    }
+  ],
+  "actions": [
+    {
+      "id": "m0-obtain",
+      "type": "obtain",
+      "material_key": "input:train:data.csv",
+      "depends_on": []
+    },
+    {
+      "id": "m0-verify",
+      "type": "verify",
+      "material_key": "input:train:data.csv",
+      "depends_on": [
+        "m0-obtain"
+      ]
+    },
+    {
+      "id": "m0-materialize",
+      "type": "materialize",
+      "material_key": "input:train:data.csv",
+      "depends_on": [
+        "m0-verify"
+      ]
+    },
+    {
+      "id": "m1-obtain",
+      "type": "obtain",
+      "material_key": "material:code",
+      "depends_on": []
+    },
+    {
+      "id": "m1-verify",
+      "type": "verify",
+      "material_key": "material:code",
+      "depends_on": [
+        "m1-obtain"
+      ]
+    },
+    {
+      "id": "m1-materialize",
+      "type": "materialize",
+      "material_key": "material:code",
+      "depends_on": [
+        "m1-verify"
+      ]
+    },
+    {
+      "id": "m2-obtain",
+      "type": "obtain",
+      "material_key": "material:environment",
+      "depends_on": []
+    },
+    {
+      "id": "m2-verify",
+      "type": "verify",
+      "material_key": "material:environment",
+      "depends_on": [
+        "m2-obtain"
+      ]
+    },
+    {
+      "id": "m2-materialize",
+      "type": "materialize",
+      "material_key": "material:environment",
+      "depends_on": [
+        "m2-verify"
+      ]
+    },
+    {
+      "id": "m3-obtain",
+      "type": "obtain",
+      "material_key": "material:package",
+      "depends_on": []
+    },
+    {
+      "id": "m3-verify",
+      "type": "verify",
+      "material_key": "material:package",
+      "depends_on": [
+        "m3-obtain"
+      ]
+    },
+    {
+      "id": "m3-materialize",
+      "type": "materialize",
+      "material_key": "material:package",
+      "depends_on": [
+        "m3-verify"
+      ]
+    },
+    {
+      "id": "m4-obtain",
+      "type": "obtain",
+      "material_key": "material:split",
+      "depends_on": []
+    },
+    {
+      "id": "m4-verify",
+      "type": "verify",
+      "material_key": "material:split",
+      "depends_on": [
+        "m4-obtain"
+      ]
+    },
+    {
+      "id": "m4-materialize",
+      "type": "materialize",
+      "material_key": "material:split",
+      "depends_on": [
+        "m4-verify"
+      ]
+    },
+    {
+      "id": "m5-obtain",
+      "type": "obtain",
+      "material_key": "output:output.txt",
+      "depends_on": []
+    },
+    {
+      "id": "m5-verify",
+      "type": "verify",
+      "material_key": "output:output.txt",
+      "depends_on": [
+        "m5-obtain"
+      ]
+    },
+    {
+      "id": "m5-materialize",
+      "type": "materialize",
+      "material_key": "output:output.txt",
+      "depends_on": [
+        "m5-verify"
+      ]
+    },
+    {
+      "id": "prepare_environment",
+      "type": "prepare_environment",
+      "material_key": null,
+      "depends_on": [
+        "m0-materialize",
+        "m1-materialize",
+        "m2-materialize",
+        "m3-materialize",
+        "m4-materialize"
+      ]
+    },
+    {
+      "id": "validate_conditions",
+      "type": "validate_conditions",
+      "material_key": null,
+      "depends_on": [
+        "prepare_environment"
+      ]
+    },
+    {
+      "id": "execute_trusted",
+      "type": "execute_trusted",
+      "material_key": null,
+      "depends_on": [
+        "validate_conditions"
+      ]
+    },
+    {
+      "id": "register_run",
+      "type": "register_run",
+      "material_key": null,
+      "depends_on": [
+        "execute_trusted"
+      ]
+    }
+  ],
+  "stored_materials_ready": false,
+  "runtime_ready": "unchecked",
+  "execution": "unchecked",
+  "numerical_agreement": "unchecked"
+}
