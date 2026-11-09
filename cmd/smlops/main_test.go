@@ -69,3 +69,43 @@ func TestCLI(t *testing.T) {
 	os.WriteFile(filepath.Join(store, "objects", "sha256", digest), []byte("broken"), 0600)
 	invoke(append(append([]string{"object", "get"}, common...), "--output", filepath.Join(dir, "new")), 1, "integrity")
 }
+
+func TestCatalogCLI(t *testing.T) {
+	dir := t.TempDir()
+	bin := filepath.Join(dir, "smlops")
+	build := exec.Command("go", "build", "-o", bin, ".")
+	if b, e := build.CombinedOutput(); e != nil {
+		t.Fatal(string(b), e)
+	}
+	store := filepath.Join(dir, "store")
+	if e := os.Mkdir(store, 0700); e != nil {
+		t.Fatal(e)
+	}
+	invoke := func(args ...string) []byte {
+		t.Helper()
+		c := exec.Command(bin, args...)
+		b, e := c.CombinedOutput()
+		if e != nil {
+			t.Fatalf("%v: %s %v", args, b, e)
+		}
+		return b
+	}
+	id := "00000000000000000000000000000001"
+	invoke("repository", "init", "--store", store, "--repository-id", id)
+	request := filepath.Join(dir, "request.json")
+	body := `{"schema_version":1,"repository_id":"` + id + `","operation_id":"00000000000000000000000000000002","type":"publish_dataset","body":{"predecessor_id":null,"files":[]},"ref_update":{"name":"main","expected_revision":0}}`
+	if e := os.WriteFile(request, []byte(body), 0600); e != nil {
+		t.Fatal(e)
+	}
+	b := invoke("dataset", "publish", "--store", store, "--request", request)
+	var receipt struct {
+		RecordID string `json:"record_id"`
+	}
+	if e := json.Unmarshal(b, &receipt); e != nil || receipt.RecordID == "" {
+		t.Fatal(string(b), e)
+	}
+	invoke("dataset", "show", "--store", store, "--id", receipt.RecordID)
+	invoke("dataset", "list", "--store", store, "--after-sequence", "0", "--limit", "2", "--view-sequence", "1")
+	invoke("ref", "show", "--store", store, "--name", "main")
+	invoke("operation", "show", "--store", store, "--id", "00000000000000000000000000000002")
+}
