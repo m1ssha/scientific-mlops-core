@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/m1ssha/scientific-mlops-core/catalog"
 	"github.com/m1ssha/scientific-mlops-core/object"
 	"github.com/m1ssha/scientific-mlops-core/storage/local"
 )
@@ -34,19 +35,34 @@ func classify(err error) string {
 		return "cancelled"
 	case errors.Is(err, context.DeadlineExceeded):
 		return "deadline"
-	case errors.Is(err, object.ErrInvalidRef):
+	case errors.Is(err, catalog.ErrInvalidInput), errors.Is(err, object.ErrInvalidRef):
 		return "invalid_input"
-	case errors.Is(err, object.ErrNotFound):
+	case errors.Is(err, catalog.ErrNotInitialized):
+		return "not_initialized"
+	case errors.Is(err, catalog.ErrMissingDependency):
+		return "missing_dependency"
+	case errors.Is(err, catalog.ErrOperationConflict):
+		return "operation_conflict"
+	case errors.Is(err, catalog.ErrConflict):
+		return "conflict"
+	case errors.Is(err, catalog.ErrUnsupportedKind):
+		return "unsupported_kind"
+	case errors.Is(err, catalog.ErrUnsupportedSchema):
+		return "unsupported_schema"
+	case errors.Is(err, catalog.ErrNotFound), errors.Is(err, object.ErrNotFound):
 		return "not_found"
-	case errors.Is(err, object.ErrIntegrity):
+	case errors.Is(err, catalog.ErrIntegrity), errors.Is(err, object.ErrIntegrity):
 		return "integrity"
-	case errors.Is(err, object.ErrUncertain):
+	case errors.Is(err, catalog.ErrUncertain), errors.Is(err, object.ErrUncertain):
 		return "uncertain"
 	default:
 		return "storage"
 	}
 }
 func run(args []string) int {
+	if len(args) > 0 && args[0] != "object" {
+		return runCatalog(args)
+	}
 	if len(args) < 2 || args[0] != "object" || (args[1] != "put" && args[1] != "verify" && args[1] != "get") {
 		return fail("invalid_input", errors.New("expected object put, verify or get"))
 	}
