@@ -37,6 +37,69 @@ size=$(wc -c < example.txt | tr -d ' ')
 go test ./...
 ```
 
+## Каталог версий данных
+
+Каталог поддерживает только записи вида dataset. В Go пакет `catalog` предоставляет
+`NewLocalMetadata`, `NewService` и методы `InitRepository`, `Repository`,
+`PublishDataset`, `GetDataset`, `ListDatasets`, `SetReference`, `GetReference`
+и `GetOperation`. Файловый адаптер реализует порт `MetadataStore` с `Read` и
+`Update`; объектное хранилище остаётся отдельным портом.
+
+Продолжение примера выше: `example-store` уже существует после object put.
+Инициализация требует существующий безопасный корневой каталог и выполняется
+явно; она не создаёт корень. ID репозитория и операций задаёт клиент: это ровно
+32 строчные шестнадцатеричные цифры. Для каждого нового намерения нужен новый
+operation ID.
+
+```bash
+./smlops repository init --store ./example-store --repository-id 00000000000000000000000000000001
+cat > dataset-request.json <<EOF
+{
+  "schema_version": 1,
+  "repository_id": "00000000000000000000000000000001",
+  "operation_id": "00000000000000000000000000000002",
+  "type": "publish_dataset",
+  "body": {
+    "predecessor_id": null,
+    "files": [{"path": "example.txt", "object": {"algorithm": "sha256", "digest": "$digest", "size": $size}}]
+  },
+  "ref_update": {"name": "main", "expected_revision": 0}
+}
+EOF
+./smlops dataset publish --store ./example-store --request dataset-request.json
+./smlops repository show --store ./example-store
+./smlops dataset list --store ./example-store --after-sequence 0 --limit 10 --view-sequence 1
+./smlops ref show --store ./example-store --name main
+./smlops operation show --store ./example-store --id 00000000000000000000000000000002
+```
+
+Первичная публикация создаёт запись и ссылку `main`; `expected_revision: 0`
+означает ожидание отсутствия ссылки. Файлы должны быть предварительно загружены
+через object put; публикация проверяет их размер и хеш. Полученный `record_id`
+можно передать в `dataset show --store DIR --id ID`. Для обновления существующей
+ссылки используется `ref set --store DIR --request FILE`: JSON-команда имеет
+тот же envelope, `type: "set_reference"`, `ref_update: null` и body с полями
+`name`, `target_kind: "dataset"`, `target_id` и `expected_revision`. В качестве
+ожидаемой ревизии передайте ревизию из ref show; конфликт не обновляет ссылку.
+
+Для первой страницы списка возьмите `sequence` из repository show и укажите его
+как `--view-sequence`, вместе с `--after-sequence 0` и положительным `--limit`.
+Для следующей страницы передайте `next_after_sequence` из ответа как
+`--after-sequence`, сохранив тот же `--view-sequence`. Значение null означает конец.
+
+Повтор той же нормализованной команды с тем же operation ID возвращает сохранённый
+результат без новой проверки объектов и изменения каталога; другие входы с тем же
+ID дают `operation_conflict`. После ошибки `uncertain` проверьте operation show
+или повторите ту же команду с тем же ID. При неопределённом результате init
+проверьте repository show: у init нет operation ID. Если каталог metadata есть,
+но lock или catalog отсутствует, потребуется ручная диагностика; повторный init
+завершится конфликтом и не восстанавливает историю автоматически.
+
+Каталог, содержащий неподдерживаемые записи или команды вроде snapshot/run,
+отклоняется с `unsupported_kind` и не перезаписывается. Это ограничение вида,
+а не `unsupported_schema`. Snapshot/run, сравнение и восстановление пока не
+реализованы; ADR остаются proposed.
+
 ## Границы прототипа
 
 Хранилище рассчитано на локальную файловую систему Linux и доверенного владельца. Проверка хеша обнаруживает повреждение содержимого, но не подтверждает авторство, выполнение эксперимента или воспроизводимость результатов. Сохранность при потере питания не гарантируется. Отмена после публикации может оставить корректный объект; его состояние можно проверить отдельно.
