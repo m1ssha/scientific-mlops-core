@@ -10,5 +10,7 @@
   "comparison": "Verify full materials, actual execution artifacts and independently recompute outcomes from raw labels and split; exact equality only with identical materials and mandatory environment. Otherwise incomparable or unchecked.",
   "pilots": "Three separate fresh processes and directories on the same committed code, without tuning; retain all attempts.",
   "main": "Forbidden until protocol and code are frozen after pilot review. Then first successful execution is reference, two independent clean-directory repeats and one new hash-installed venv execution. Record package source and cache use.",
-  "limits": "Single split and host: no generalization, cross-machine portability, scalability or novelty claims. Wheels and Python are not bundled."
+  "limits": "Single split and host: no generalization, cross-machine portability, scalability or novelty claims. Wheels and Python are not bundled.",
+  "control": "After the canonical pilot, a separate controlled run may use C=2.0; no quality change is expected or required. All canonical trials use C=1.0.",
+  "freeze": null
 }

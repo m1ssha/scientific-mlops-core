@@ -23,6 +23,9 @@ FILES = ('data/wine.data', 'data/SOURCE.md', 'requirements.lock', 'split.json', 
          'protocol.json', 'pipeline.py', 'prepare_split.py', 'README.md', 'test_pipeline.py')
 PACKAGES = ('cloudpickle', 'joblib', 'narwhals', 'numpy', 'scikit-learn', 'scipy', 'threadpoolctl')
 CLASSES = (1, 2, 3)
+LOADED_SOURCE_SHA = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+PROTOCOL_FIELDS = {'version', 'status', 'purpose', 'data', 'split', 'method', 'runtime',
+                   'scores', 'comparison', 'pilots', 'main', 'limits', 'control', 'freeze'}
 
 
 def sha(path):
@@ -66,10 +69,31 @@ def verify(root):
     if [sum(rows[i-1][0] == c for i in test) for c in CLASSES] != [15, 18, 12]:
         raise ValueError('invalid split supports')
     config = read(root / 'config.json')
-    expected = {'solver': 'lbfgs', 'C': 1.0, 'tol': 0.0001, 'max_iter': 1000,
+    expected = {'solver': 'lbfgs', 'tol': 0.0001, 'max_iter': 1000,
                 'fit_intercept': True, 'l1_ratio': 0.0}
-    if config != expected:
+    if (type(config) is not dict or set(config) != set(expected) | {'C'} or
+        any(type(config[k]) is not type(v) or config[k] != v for k, v in expected.items()) or
+        type(config['C']) not in (int, float) or not math.isfinite(config['C']) or not 0 < config['C'] <= 2):
         raise ValueError('unsupported configuration')
+    protocol = read(root / 'protocol.json')
+    if (type(protocol) is not dict or set(protocol) != PROTOCOL_FIELDS or
+        type(protocol['version']) is not int or protocol['version'] != 1 or protocol['status'] not in ('draft', 'frozen') or
+        any(type(protocol[k]) is not str or not protocol[k].strip() for k in PROTOCOL_FIELDS - {'version', 'status', 'freeze'})):
+        raise ValueError('invalid protocol')
+    freeze = protocol['freeze']
+    if protocol['status'] == 'frozen':
+        if (type(freeze) is not dict or set(freeze) != {'code_revision', 'code_files', 'frozen_at'} or
+            type(freeze['code_revision']) is not str or not re.fullmatch('[0-9a-f]{40}', freeze['code_revision']) or
+            freeze['code_files'] != {name: sha(root / name) for name in ('pipeline.py', 'prepare_split.py')}):
+            raise ValueError('invalid frozen code identity')
+        try:
+            frozen_at = datetime.fromisoformat(freeze['frozen_at'])
+            if frozen_at.tzinfo is None or frozen_at.utcoffset().total_seconds() != 0:
+                raise ValueError('freeze time must be UTC')
+        except (ValueError, TypeError, AttributeError) as e:
+            raise ValueError('invalid freeze time') from e
+    elif freeze is not None:
+        raise ValueError('draft protocol must not claim frozen code')
     return rows, split, config
 
 
@@ -115,7 +139,7 @@ def environment(root):
             'packages': {p: importlib.metadata.version(p) for p in PACKAGES},
             'lock_sha256': sha(root / 'requirements.lock'), 'threads': {x: os.environ[x] for x in THREADS},
             'backends': sorted(pools, key=lambda x: json.dumps(x, sort_keys=True))}
-    validate_environment(result)
+    validate_environment(result, root)
     return result
 
 
@@ -159,11 +183,23 @@ def now():
     return datetime.now(timezone.utc).isoformat()
 
 
-def run(root, out):
+def run(root, out, phase='validation'):
     out.mkdir(parents=True, exist_ok=False)
     start = now(); run_id = str(uuid.uuid4())
     try:
+        if Path(__file__).resolve() != (root / 'pipeline.py').resolve() or LOADED_SOURCE_SHA != sha(root / 'pipeline.py'):
+            raise ValueError('active source is not the verified bundle source')
+        if phase not in ('pilot', 'validation', 'main'):
+            raise ValueError('invalid phase')
+        initial_manifest = manifest(root)
+        initial_manifest_hash = sha(root / 'manifest.json')
         rows, split, config = verify(root)
+        if manifest(root) != initial_manifest or sha(root / 'manifest.json') != initial_manifest_hash:
+            raise ValueError('inputs changed during validation')
+        if phase in ('pilot', 'main') and config['C'] != 1.0:
+            raise ValueError('pilot and main require canonical configuration')
+        if phase == 'main' and read(root / 'protocol.json')['status'] != 'frozen':
+            raise ValueError('main phase requires frozen protocol')
         y, pred, dummy, params = train(rows, split, config)
         env = environment(root)
         with (out / 'predictions.csv').open('w', newline='') as f:
@@ -171,24 +207,76 @@ def run(root, out):
             writer.writerows(zip(split['test'], y, pred, dummy))
         write(out / 'metrics.json', {'model': metrics(y, pred), 'dummy': metrics(y, dummy)})
         write(out / 'model.json', params); write(out / 'environment.json', env)
-        result = {'status': 'success', 'run_id': run_id, 'started_at': start, 'finished_at': now(),
-                  'manifest_sha256': sha(root / 'manifest.json'), 'inputs': manifest(root)['files'],
+        if manifest(root) != initial_manifest or sha(root / 'manifest.json') != initial_manifest_hash:
+            raise ValueError('inputs changed during execution')
+        result = {'status': 'success', 'run_id': run_id, 'phase': phase, 'started_at': start, 'finished_at': now(),
+                  'manifest_sha256': initial_manifest_hash, 'inputs': initial_manifest['files'],
                   'outputs': {name: sha(out / name) for name in ('predictions.csv', 'metrics.json', 'model.json', 'environment.json')}}
         write(out / 'result.json', result)
         return result
     except Exception as e:
-        result = {'status': 'failed', 'run_id': run_id, 'started_at': start, 'finished_at': now(),
+        result = {'status': 'failed', 'run_id': run_id, 'phase': phase, 'started_at': start, 'finished_at': now(),
                   'error': error_text(e)}
         write(out / 'result.json', result)
         raise
 
 
+def strict_equal(actual, expected):
+    if type(actual) is not type(expected):
+        return False
+    if isinstance(expected, dict):
+        return actual.keys() == expected.keys() and all(strict_equal(actual[k], v) for k, v in expected.items())
+    if isinstance(expected, list):
+        return len(actual) == len(expected) and all(strict_equal(a, b) for a, b in zip(actual, expected))
+    return actual == expected
+
+
+def valid_text(value):
+    return type(value) is str and bool(value.strip()) and value.strip().lower() not in ('unknown', 'none', 'n/a')
+
+
+def validate_model(model):
+    if type(model) is not dict or set(model) != {'scaler', 'model'}:
+        raise ValueError('invalid model structure')
+    scaler, classifier = model['scaler'], model['model']
+    if type(scaler) is not dict or set(scaler) != {'mean', 'scale', 'var'} or type(classifier) is not dict or set(classifier) != {'classes', 'coef', 'intercept', 'n_iter'}:
+        raise ValueError('invalid model structure')
+    def numbers(values, length):
+        return type(values) is list and len(values) == length and all(type(v) in (int, float) and math.isfinite(v) for v in values)
+    if (not all(numbers(scaler[k], 13) for k in scaler) or
+        any(v <= 0 for v in scaler['scale']) or any(v < 0 for v in scaler['var']) or
+        not strict_equal(classifier['classes'], [1, 2, 3]) or
+        type(classifier['coef']) is not list or len(classifier['coef']) != 3 or
+        not all(numbers(row, 13) for row in classifier['coef']) or
+        not numbers(classifier['intercept'], 3) or
+        type(classifier['n_iter']) is not list or len(classifier['n_iter']) != 1 or
+        any(type(i) is not int or not 0 < i <= 1000 for i in classifier['n_iter'])):
+        raise ValueError('invalid model values')
+
+
+def validate_record(record, root):
+    if (type(record) is not dict or set(record) != {'status', 'run_id', 'phase', 'started_at', 'finished_at', 'manifest_sha256', 'inputs', 'outputs'} or record.get('status') != 'success'):
+        raise ValueError('execution record is not successful')
+    try:
+        if str(uuid.UUID(record['run_id'])) != record['run_id']:
+            raise ValueError('invalid run ID')
+        start = datetime.fromisoformat(record['started_at']); end = datetime.fromisoformat(record['finished_at'])
+        if start.tzinfo is None or end.tzinfo is None or end < start:
+            raise ValueError('invalid timestamps')
+    except (ValueError, TypeError, AttributeError, KeyError) as e:
+        raise ValueError('invalid execution identity or timestamps') from e
+    if (record.get('phase') not in ('pilot', 'validation', 'main') or
+        (record['phase'] in ('pilot', 'main') and read(root / 'config.json')['C'] != 1.0) or
+        (record['phase'] == 'main' and read(root / 'protocol.json')['status'] != 'frozen') or
+        record.get('manifest_sha256') != sha(root / 'manifest.json') or record.get('inputs') != manifest(root)['files']):
+        raise ValueError('execution or input record mismatch')
+
+
 def validate_output(root, out, rows, split):
     record = read(out / 'result.json')
-    if record['status'] != 'success' or record['manifest_sha256'] != sha(root / 'manifest.json') or record['inputs'] != manifest(root)['files']:
-        raise ValueError('execution or input record mismatch')
+    validate_record(record, root)
     expected = ('predictions.csv', 'metrics.json', 'model.json', 'environment.json')
-    if set(record['outputs']) != set(expected) or any(sha(out / p) != record['outputs'][p] for p in expected):
+    if type(record.get('outputs')) is not dict or set(record['outputs']) != set(expected) or any(sha(out / p) != record['outputs'][p] for p in expected):
         raise ValueError('output hash mismatch')
     with (out / 'predictions.csv').open(newline='') as f:
         reader = csv.DictReader(f)
@@ -201,26 +289,61 @@ def validate_output(root, out, rows, split):
         raise ValueError('prediction identity or truth mismatch')
     preds = {key: [int(r[key]) for r in data] for key in ('model', 'dummy')}
     recomputed = {key: metrics(truth, value) for key, value in preds.items()}
-    if read(out / 'metrics.json') != recomputed:
+    if not strict_equal(read(out / 'metrics.json'), recomputed):
         raise ValueError('metric mismatch')
-    read(out / 'model.json')
+    validate_model(read(out / 'model.json'))
     env = read(out / 'environment.json')
-    validate_environment(env)
+    try:
+        validate_environment(env, root)
+    except Exception as e:
+        raise InvalidEnvironment(error_text(e)) from e
     return preds, recomputed, env, record['run_id']
 
 
-def validate_environment(env):
-    if set(env) != {'python_implementation', 'python_version', 'system', 'machine', 'libc', 'packages', 'lock_sha256', 'threads', 'backends'}:
+def lock_versions(root):
+    versions = {}
+    for line in (root / 'requirements.lock').read_text().splitlines():
+        if not line or line.startswith('#') or line.startswith('--'):
+            continue
+        match = re.fullmatch(r'([a-zA-Z0-9-]+)==([^ ]+) --hash=sha256:([0-9a-f]{64})', line)
+        if not match or match[1] in versions:
+            raise ValueError('invalid lock format')
+        versions[match[1]] = match[2]
+    if set(versions) != set(PACKAGES):
+        raise ValueError('invalid lock packages')
+    return versions
+
+
+class InvalidEnvironment(ValueError):
+    pass
+
+
+def validate_environment(env, root):
+    if type(env) is not dict or set(env) != {'python_implementation', 'python_version', 'system', 'machine', 'libc', 'packages', 'lock_sha256', 'threads', 'backends'}:
         raise ValueError('invalid environment schema')
-    if not all(env.get(k) and str(env[k]).lower() != 'unknown' for k in ('python_implementation', 'python_version', 'system', 'machine', 'lock_sha256')) or len(env['libc']) != 2 or not all(env['libc']):
-        raise ValueError('incomplete environment')
-    if set(env['packages']) != set(PACKAGES) or not all(env['packages'].values()) or env['threads'] != {x: '1' for x in THREADS} or not env['backends']:
+    if (env['python_implementation'], env['python_version'], env['system'], env['machine']) != ('CPython', '3.12.15', 'Linux', 'x86_64'):
+        raise ValueError('unsupported environment profile')
+    if (type(env['libc']) is not list or len(env['libc']) != 2 or not all(valid_text(v) for v in env['libc']) or
+        type(env['packages']) is not dict or env['packages'] != lock_versions(root) or
+        env['lock_sha256'] != sha(root / 'requirements.lock') or
+        type(env['threads']) is not dict or env['threads'] != {x: '1' for x in THREADS} or
+        type(env['backends']) is not list or not env['backends']):
         raise ValueError('incomplete environment')
     for p in env['backends']:
-        if set(p) != {'internal_api', 'version', 'threading_layer', 'num_threads', 'architecture', 'basename', 'sha256'} or not p['internal_api'] or p['num_threads'] != 1 or not p['basename'] or '/' in p['basename'] or not re.fullmatch('[0-9a-f]{64}', p['sha256']):
+        if (type(p) is not dict or set(p) != {'internal_api', 'version', 'threading_layer', 'num_threads', 'architecture', 'basename', 'sha256'} or
+            p['internal_api'] not in ('openblas', 'mkl', 'blis', 'openmp') or type(p['num_threads']) is not int or p['num_threads'] != 1 or
+            not valid_text(p['basename']) or Path(p['basename']).name != p['basename'] or
+            type(p['sha256']) is not str or not re.fullmatch('[0-9a-f]{64}', p['sha256'])):
             raise ValueError('invalid backend')
-        if p['internal_api'] != 'openmp' and not p['version']:
-            raise ValueError('missing BLAS version')
+        if p['internal_api'] == 'openmp':
+            if any(v is not None and not valid_text(v) for v in (p['version'], p['threading_layer'], p['architecture'])):
+                raise ValueError('invalid OpenMP fields')
+        elif not all(valid_text(p[k]) for k in ('version', 'threading_layer', 'architecture')):
+            raise ValueError('incomplete BLAS fields')
+    if not any(p['internal_api'] in ('openblas', 'mkl', 'blis') for p in env['backends']):
+        raise ValueError('no BLAS backend')
+    if env['backends'] != sorted(env['backends'], key=lambda x: json.dumps(x, sort_keys=True)):
+        raise ValueError('unsorted backends')
 
 
 def compare(root_a, a, root_b, b):
@@ -228,17 +351,29 @@ def compare(root_a, a, root_b, b):
     try:
         rows_a, split_a, _ = verify(root_a); rows_b, split_b, _ = verify(root_b)
         result['materials'] = 'equal' if manifest(root_a) == manifest(root_b) else 'different'
+    except Exception as e:
+        result['materials'] = 'invalid'; result['error'] = error_text(e); return result
+    try:
+        for out in (a, b):
+            record = read(out / 'result.json')
+            if record.get('status') == 'failed':
+                result['execution'] = 'failed'
+                result['error'] = 'execution record reports failure'
+                return result
         pa, ma, ea, ida = validate_output(root_a, a, rows_a, split_a)
         pb, mb, eb, idb = validate_output(root_b, b, rows_b, split_b)
-        if not ida or ida == idb:
+        if ida == idb:
             raise ValueError('repeat must have a distinct run_id')
-        result['execution'] = 'valid'; result['conditions'] = 'equal' if ea == eb else 'different'
-        if result['materials'] == 'equal' and result['conditions'] == 'equal':
-            result['numerical'] = 'pass' if (pa, ma) == (pb, mb) else 'different'
-        else:
-            result['numerical'] = 'incomparable'
+        result['execution'] = 'valid'
+    except InvalidEnvironment as e:
+        result['execution'] = 'invalid'; result['conditions'] = 'invalid'; result['error'] = error_text(e); return result
     except Exception as e:
-        result['error'] = error_text(e)
+        result['execution'] = 'invalid'; result['error'] = error_text(e); return result
+    result['conditions'] = 'equal' if ea == eb else 'different'
+    if result['materials'] == 'equal' and result['conditions'] == 'equal':
+        result['numerical'] = 'pass' if (pa, ma) == (pb, mb) else 'different'
+    else:
+        result['numerical'] = 'incomparable'
     return result
 
 
@@ -246,7 +381,9 @@ def main():
     parser = argparse.ArgumentParser(); sub = parser.add_subparsers(dest='command', required=True)
     for name in ('manifest', 'verify', 'run'):
         p = sub.add_parser(name); p.add_argument('--root', type=Path, required=True)
-        if name == 'run': p.add_argument('--out', type=Path, required=True)
+        if name == 'run':
+            p.add_argument('--out', type=Path, required=True)
+            p.add_argument('--phase', choices=('pilot', 'validation', 'main'), default='validation')
         if name == 'verify': p.add_argument('--wheelhouse', type=Path)
     p = sub.add_parser('compare'); p.add_argument('--root-a', type=Path, required=True); p.add_argument('--a', type=Path, required=True); p.add_argument('--root-b', type=Path, required=True); p.add_argument('--b', type=Path, required=True)
     args = parser.parse_args()
@@ -255,7 +392,7 @@ def main():
             write(args.root / 'manifest.json', manifest(args.root)); result = {'status': 'success'}
         elif args.command == 'verify':
             verify(args.root); result = {'status': 'success', 'materials': 'verified', 'wheelhouse': wheelhouse(args.root, args.wheelhouse) if args.wheelhouse else 'unchecked'}
-        elif args.command == 'run': result = run(args.root, args.out)
+        elif args.command == 'run': result = run(args.root, args.out, args.phase)
         else: result = compare(args.root_a, args.a, args.root_b, args.b)
         print(json.dumps(result, sort_keys=True, allow_nan=False))
         return 0 if result.get('status') == 'success' or result.get('numerical') == 'pass' else 1

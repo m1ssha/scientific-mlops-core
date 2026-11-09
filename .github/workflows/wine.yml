@@ -17,6 +17,6 @@ jobs:
       - run: |
           cp -r examples/wine /tmp/wine-a
           cp -r examples/wine /tmp/wine-b
-          python /tmp/wine-a/pipeline.py run --root /tmp/wine-a --out /tmp/result-a
-          python /tmp/wine-b/pipeline.py run --root /tmp/wine-b --out /tmp/result-b
+          python /tmp/wine-a/pipeline.py run --phase validation --root /tmp/wine-a --out /tmp/result-a
+          python /tmp/wine-b/pipeline.py run --phase validation --root /tmp/wine-b --out /tmp/result-b
           python /tmp/wine-a/pipeline.py compare --root-a /tmp/wine-a --a /tmp/result-a --root-b /tmp/wine-b --b /tmp/result-b
