@@ -1,0 +1,26 @@
+{
+  "finished_at": "2026-11-09T13:15:35.561358+00:00",
+  "inputs": {
+    "README.md": "f6dbcd87d778a6dea84568a3ce61d29f018017e8335310584a2d9d3f4b4a954a",
+    "config.json": "2ccf75e06a3083747ee7e28c36d54d34352bf542474659624574d4e2beb6a361",
+    "data/SOURCE.md": "e44a12f115ad67607eb9a939450226736152425c6a193ce664442a0a3f755dbd",
+    "data/wine.data": "6be6b1203f3d51df0b553a70e57b8a723cd405683958204f96d23d7cd6aea659",
+    "pipeline.py": "987c1c919830ba38f7caab79ccecf0c839e1d66823cd8ffb910f2094adcff4bf",
+    "prepare_split.py": "b6c697896fe59055ca8d52b1831e8950bbf73ca0ae15adf2b64404fd2d2bdb88",
+    "protocol.json": "9057ec64676bcf39558955687af8e6425487a498e6f97de1b72145a966c681df",
+    "requirements.lock": "074a34a6da4618dbcf50315add680a8e7693670d97593abf61872d0dadc58e10",
+    "split.json": "1b3b2d938daf1e0058601946bbf3a672d3816025403e90cc24b84fc2ab3eb66d",
+    "test_pipeline.py": "e47909421b1c9bc8b231899c26d5c2782f66cdbe0653e1a9997b9fec6d685cc9"
+  },
+  "manifest_sha256": "876fb9ee28e6e1501fa1ca32782e11786c3162ab7b1500f885d4a8554bc4f9b1",
+  "outputs": {
+    "environment.json": "af92ca37429e63956deee7a4b27ed9f74f9169330f6443ad4af199284271a7a5",
+    "metrics.json": "0cf3220c9e8dd472a45b1c9a8611a4e1260b07e131fa2e34556e910acf137de5",
+    "model.json": "bbf1993c5120e9a0e864cf7e8d27d7d6111933b4ee51517f4aff281c8cfa64d0",
+    "predictions.csv": "6066ccfdb1c96906a234b7dc7faa59c0306999a1f723d2659ad20692f62eef62"
+  },
+  "phase": "main",
+  "run_id": "8abc3e2d-1218-4c0f-9c65-c7a2ce8863e5",
+  "started_at": "2026-11-09T13:15:34.738834+00:00",
+  "status": "success"
+}

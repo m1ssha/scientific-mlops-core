@@ -1,0 +1,10 @@
+Looking in links: <workspace>/.codex/wheelhouse/wine
+Processing ./.codex/wheelhouse/wine/cloudpickle-3.1.2-py3-none-any.whl (from -r <workspace>/.codex/evidence/issue6/main-v1/fresh-venv/examples/wine/requirements.lock (line 3))
+Processing ./.codex/wheelhouse/wine/joblib-1.6.0-py3-none-any.whl (from -r <workspace>/.codex/evidence/issue6/main-v1/fresh-venv/examples/wine/requirements.lock (line 4))
+Processing ./.codex/wheelhouse/wine/narwhals-2.28.0-py3-none-any.whl (from -r <workspace>/.codex/evidence/issue6/main-v1/fresh-venv/examples/wine/requirements.lock (line 5))
+Processing ./.codex/wheelhouse/wine/numpy-2.5.4-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (from -r <workspace>/.codex/evidence/issue6/main-v1/fresh-venv/examples/wine/requirements.lock (line 6))
+Processing ./.codex/wheelhouse/wine/scikit_learn-1.9.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (from -r <workspace>/.codex/evidence/issue6/main-v1/fresh-venv/examples/wine/requirements.lock (line 7))
+Processing ./.codex/wheelhouse/wine/scipy-1.18.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (from -r <workspace>/.codex/evidence/issue6/main-v1/fresh-venv/examples/wine/requirements.lock (line 8))
+Processing ./.codex/wheelhouse/wine/threadpoolctl-3.8.0-py3-none-any.whl (from -r <workspace>/.codex/evidence/issue6/main-v1/fresh-venv/examples/wine/requirements.lock (line 9))
+Installing collected packages: threadpoolctl, numpy, narwhals, cloudpickle, scipy, joblib, scikit-learn
+Successfully installed cloudpickle-3.1.2 joblib-1.6.0 narwhals-2.28.0 numpy-2.5.4 scikit-learn-1.9.1 scipy-1.18.1 threadpoolctl-3.8.0
