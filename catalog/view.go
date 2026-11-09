@@ -1,6 +1,10 @@
 package catalog
 
-import "sort"
+import (
+	"fmt"
+	"sort"
+	"sync"
+)
 
 type generation struct {
 	Repository ID                   `json:"repository_id"`
@@ -84,12 +88,41 @@ func cloneGeneration(g generation) generation {
 }
 
 type transaction struct {
+	mu      sync.Mutex
 	g       generation
 	changed bool
+	closed  bool
 }
 
-func (t *transaction) View() View { return snapshot{cloneGeneration(t.g)} }
+// finish invalidates the transaction and hands commit a detached snapshot.
+func (t *transaction) finish() (generation, bool) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.closed = true
+	return cloneGeneration(t.g), t.changed
+}
+func (t *transaction) checkOpen() error {
+	if t.closed {
+		return fmt.Errorf("%w: transaction closed", ErrInvalidInput)
+	}
+	return nil
+}
+
+// View returns nil after the callback has ended.
+func (t *transaction) View() View {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.closed {
+		return nil
+	}
+	return snapshot{cloneGeneration(t.g)}
+}
 func (t *transaction) AddRecord(r Record) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if e := t.checkOpen(); e != nil {
+		return e
+	}
 	if _, ok := t.g.Records[r.ID]; ok {
 		return ErrConflict
 	}
@@ -98,6 +131,11 @@ func (t *transaction) AddRecord(r Record) error {
 	return nil
 }
 func (t *transaction) AddOperation(id ID, o Operation) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if e := t.checkOpen(); e != nil {
+		return e
+	}
 	if _, ok := t.g.Operations[id]; ok {
 		return ErrOperationConflict
 	}
@@ -107,6 +145,11 @@ func (t *transaction) AddOperation(id ID, o Operation) error {
 	return nil
 }
 func (t *transaction) CompareAndSwapReference(name string, expected int64, r Reference) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if e := t.checkOpen(); e != nil {
+		return e
+	}
 	revision, e := checkRef(snapshot{t.g}, name, expected, r.TargetKind)
 	if e != nil {
 		return e

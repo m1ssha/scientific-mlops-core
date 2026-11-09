@@ -109,3 +109,76 @@ func TestCatalogCLI(t *testing.T) {
 	invoke("ref", "show", "--store", store, "--name", "main")
 	invoke("operation", "show", "--store", store, "--id", "00000000000000000000000000000002")
 }
+
+func TestCatalogCLIRetryWithoutObjectLayout(t *testing.T) {
+	dir := t.TempDir()
+	bin := filepath.Join(dir, "smlops")
+	build := exec.Command("go", "build", "-o", bin, ".")
+	if b, e := build.CombinedOutput(); e != nil {
+		t.Fatalf("build: %s: %v", b, e)
+	}
+	store := filepath.Join(dir, "store")
+	if e := os.Mkdir(store, 0700); e != nil {
+		t.Fatal(e)
+	}
+	run := func(want int, errCode string, args ...string) []byte {
+		t.Helper()
+		cmd := exec.Command(bin, args...)
+		out, e := cmd.Output()
+		if want == 0 {
+			if e != nil {
+				t.Fatalf("%v: %v", args, e)
+			}
+			return out
+		}
+		ex, ok := e.(*exec.ExitError)
+		if !ok || ex.ExitCode() != want || len(out) != 0 {
+			t.Fatalf("%v: %v, stdout %q", args, e, out)
+		}
+		var d struct {
+			Error struct {
+				Code string `json:"code"`
+			} `json:"error"`
+		}
+		if e = json.Unmarshal(ex.Stderr, &d); e != nil || d.Error.Code != errCode {
+			t.Fatalf("%v: %s", args, ex.Stderr)
+		}
+		return nil
+	}
+	id := "00000000000000000000000000000001"
+	op := "00000000000000000000000000000002"
+	run(0, "", "repository", "init", "--store", store, "--repository-id", id)
+	material := []byte("test material")
+	source := filepath.Join(dir, "material")
+	if e := os.WriteFile(source, material, 0600); e != nil {
+		t.Fatal(e)
+	}
+	digest := fmt.Sprintf("%x", sha256.Sum256(material))
+	size := fmt.Sprint(len(material))
+	run(0, "", "object", "put", "--store", store, "--file", source, "--sha256", digest, "--size", size)
+	request := filepath.Join(dir, "request.json")
+	writeRequest := func(operation, update string) {
+		t.Helper()
+		body := fmt.Sprintf(`{"schema_version":1,"repository_id":%q,"operation_id":%q,"type":"publish_dataset","body":{"predecessor_id":null,"files":[{"path":"data","object":{"algorithm":"sha256","digest":%q,"size":%s}}]},"ref_update":%s}`, id, operation, digest, size, update)
+		if e := os.WriteFile(request, []byte(body), 0600); e != nil {
+			t.Fatal(e)
+		}
+	}
+	writeRequest(op, "null")
+	first := run(0, "", "dataset", "publish", "--store", store, "--request", request)
+	staging := filepath.Join(store, "staging")
+	if e := os.Remove(staging); e != nil {
+		t.Fatal(e)
+	}
+	if e := os.WriteFile(staging, []byte("broken layout"), 0600); e != nil {
+		t.Fatal(e)
+	}
+	again := run(0, "", "dataset", "publish", "--store", store, "--request", request)
+	if string(first) != string(again) {
+		t.Fatalf("retry changed receipt: %s %s", first, again)
+	}
+	writeRequest(op, `{"name":"main","expected_revision":0}`)
+	run(1, "operation_conflict", "dataset", "publish", "--store", store, "--request", request)
+	writeRequest("00000000000000000000000000000003", "null")
+	run(1, "storage", "dataset", "publish", "--store", store, "--request", request)
+}

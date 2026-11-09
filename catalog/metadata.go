@@ -176,19 +176,23 @@ func (s *LocalMetadata) Update(ctx context.Context, fn func(Tx) error) error {
 		return e
 	}
 	t := &transaction{g: cloneGeneration(v.(snapshot).g)}
-	if e = fn(t); e != nil {
+	var committed generation
+	var changed bool
+	// The defer runs on success, error and panic, before the transaction escapes.
+	func() { defer func() { committed, changed = t.finish() }(); e = fn(t) }()
+	if e != nil {
 		return e
 	}
-	if !t.changed {
+	if !changed {
 		return nil
 	}
-	if t.g.Seq != v.Sequence()+1 || len(t.g.Records) > len(v.ListRecords())+1 {
+	if committed.Seq != v.Sequence()+1 || len(committed.Records) > len(v.ListRecords())+1 {
 		return ErrIntegrity
 	}
-	if e = validateGeneration(t.g); e != nil {
+	if e = validateGeneration(committed); e != nil {
 		return e
 	}
-	return s.commit(ctx, t.g)
+	return s.commit(ctx, committed)
 }
 func (s *LocalMetadata) commit(ctx context.Context, g generation) error {
 	payload, e := json.Marshal(g)

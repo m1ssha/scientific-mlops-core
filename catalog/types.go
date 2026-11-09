@@ -103,6 +103,9 @@ type View interface {
 	GetOperation(ID) (Operation, bool)
 	ListRecords() []Record
 }
+
+// Tx is valid only during the Update callback. View returns nil after it closes;
+// mutation methods return ErrInvalidInput.
 type Tx interface {
 	View() View
 	AddRecord(Record) error

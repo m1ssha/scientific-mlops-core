@@ -8,10 +8,47 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"sync"
 
 	"github.com/m1ssha/scientific-mlops-core/catalog"
+	"github.com/m1ssha/scientific-mlops-core/object"
 	"github.com/m1ssha/scientific-mlops-core/storage/local"
 )
+
+// deferredObjectStore leaves the object layout untouched until a new command
+// needs byte verification. Saved operations are resolved without opening it.
+type deferredObjectStore struct {
+	root  string
+	once  sync.Once
+	store *local.Store
+	err   error
+}
+
+func (s *deferredObjectStore) open() (*local.Store, error) {
+	s.once.Do(func() { s.store, s.err = local.New(s.root) })
+	return s.store, s.err
+}
+func (s *deferredObjectStore) Verify(ctx context.Context, ref object.Ref) error {
+	store, err := s.open()
+	if err != nil {
+		return err
+	}
+	return store.Verify(ctx, ref)
+}
+func (s *deferredObjectStore) Put(ctx context.Context, ref object.Ref, r io.Reader) (object.Ref, error) {
+	store, err := s.open()
+	if err != nil {
+		return object.Ref{}, err
+	}
+	return store.Put(ctx, ref, r)
+}
+func (s *deferredObjectStore) Open(ctx context.Context, ref object.Ref) (io.ReadCloser, error) {
+	store, err := s.open()
+	if err != nil {
+		return nil, err
+	}
+	return store.Open(ctx, ref)
+}
 
 func runCatalog(args []string) int {
 	if len(args) < 2 {
@@ -83,14 +120,7 @@ func runCatalog(args []string) int {
 		if err != nil {
 			return fail(classify(err), err)
 		}
-		var objects *local.Store
-		if action == "publish" {
-			objects, err = local.New(*root)
-			if err != nil {
-				return fail(classify(err), err)
-			}
-		}
-		service := catalog.NewService(store, objects)
+		service := catalog.NewService(store, &deferredObjectStore{root: *root})
 		switch {
 		case kind == "repository":
 			result = struct {

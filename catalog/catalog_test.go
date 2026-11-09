@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/m1ssha/scientific-mlops-core/storage/local"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -435,5 +437,241 @@ func TestViewCopiesAndPinnedPages(t *testing.T) {
 	page, e := s.ListDatasets(ctx, ListOptions{0, 1, 1})
 	if e != nil || len(page.Items) != 1 || page.NextAfterSequence != nil || page.ViewSequence != 1 {
 		t.Fatal(page, e)
+	}
+}
+
+func TestTransactionExpiresOnEveryCallbackExit(t *testing.T) {
+	for _, outcome := range []string{"success", "error", "panic"} {
+		t.Run(outcome, func(t *testing.T) {
+			ctx := context.Background()
+			m, e := NewLocalMetadata(t.TempDir())
+			if e != nil {
+				t.Fatal(e)
+			}
+			if e = m.InitRepository(ctx, repo); e != nil {
+				t.Fatal(e)
+			}
+			var saved Tx
+			call := func() {
+				defer func() {
+					if p := recover(); outcome == "panic" && p == nil {
+						t.Error("expected panic")
+					} else if outcome != "panic" && p != nil {
+						t.Errorf("unexpected panic: %v", p)
+					}
+				}()
+				e = m.Update(ctx, func(tx Tx) error {
+					saved = tx
+					switch outcome {
+					case "error":
+						return errors.New("callback failed")
+					case "panic":
+						panic("callback failed")
+					}
+					return nil
+				})
+				if outcome == "error" && e == nil {
+					t.Error("expected error")
+				}
+				if outcome == "success" && e != nil {
+					t.Error(e)
+				}
+			}
+			call()
+			if saved.View() != nil {
+				t.Error("closed transaction returned view")
+			}
+			if e = saved.AddRecord(Record{}); !errors.Is(e, ErrInvalidInput) {
+				t.Errorf("AddRecord: %v", e)
+			}
+			if e = saved.AddOperation(op, Operation{}); !errors.Is(e, ErrInvalidInput) {
+				t.Errorf("AddOperation: %v", e)
+			}
+			if e = saved.CompareAndSwapReference("main", 0, Reference{}); !errors.Is(e, ErrInvalidInput) {
+				t.Errorf("CAS: %v", e)
+			}
+			v, e := m.Read(ctx)
+			if e != nil || v.Sequence() != 0 {
+				t.Fatalf("unexpected catalog %v %v", v, e)
+			}
+		})
+	}
+}
+func TestTransactionConcurrentClosure(t *testing.T) {
+	ctx := context.Background()
+	m, e := NewLocalMetadata(t.TempDir())
+	if e != nil {
+		t.Fatal(e)
+	}
+	if e = m.InitRepository(ctx, repo); e != nil {
+		t.Fatal(e)
+	}
+	s := NewService(m, nil)
+	r, e := s.PublishDataset(ctx, Command{1, repo, op, "publish_dataset", DatasetBody{Files: []DatasetFile{}}, nil})
+	if e != nil {
+		t.Fatal(e)
+	}
+	ready := make(chan struct{})
+	stop := make(chan struct{})
+	done := make(chan error, 1)
+	var saved Tx
+	e = m.Update(ctx, func(tx Tx) error {
+		saved = tx
+		go func() {
+			close(ready)
+			for {
+				select {
+				case <-stop:
+					done <- nil
+					return
+				default:
+				}
+				_ = tx.View()
+				err := tx.AddRecord(Record{ID: *r.RecordID})
+				if !errors.Is(err, ErrConflict) && !errors.Is(err, ErrInvalidInput) {
+					done <- err
+					return
+				}
+			}
+		}()
+		<-ready
+		return nil
+	})
+	if e != nil {
+		t.Fatal(e)
+	}
+	close(stop)
+	if e = <-done; e != nil {
+		t.Fatal(e)
+	}
+	if saved.View() != nil {
+		t.Fatal("closed transaction returned view")
+	}
+	v, e := m.Read(ctx)
+	if e != nil || v.Sequence() != 1 || len(v.ListRecords()) != 1 {
+		t.Fatal(v, e)
+	}
+}
+
+type unavailableObjects struct {
+	object.Store
+	checks int
+}
+
+func (s *unavailableObjects) Verify(context.Context, object.Ref) error {
+	s.checks++
+	return object.ErrStorage
+}
+func TestRetryDoesNotAccessUnavailableObjects(t *testing.T) {
+	ctx := context.Background()
+	root := t.TempDir()
+	objects, e := local.New(root)
+	if e != nil {
+		t.Fatal(e)
+	}
+	body := []byte("required material")
+	sum := sha256.Sum256(body)
+	ref := object.Ref{Algorithm: "sha256", Digest: hex.EncodeToString(sum[:]), Size: int64(len(body))}
+	if _, e = objects.Put(ctx, ref, bytes.NewReader(body)); e != nil {
+		t.Fatal(e)
+	}
+	m, e := NewLocalMetadata(root)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if e = m.InitRepository(ctx, repo); e != nil {
+		t.Fatal(e)
+	}
+	c := Command{1, repo, op, "publish_dataset", DatasetBody{Files: []DatasetFile{{"data", ref}}}, nil}
+	first, e := NewService(m, objects).PublishDataset(ctx, c)
+	if e != nil {
+		t.Fatal(e)
+	}
+	bad := &unavailableObjects{}
+	s := NewService(m, bad)
+	again, e := s.PublishDataset(ctx, c)
+	if e != nil || !reflect.DeepEqual(first, again) || bad.checks != 0 {
+		t.Fatal(again, e, bad.checks)
+	}
+	changed := c
+	changed.RefUpdate = &RefUpdate{"main", 0}
+	if _, e = s.PublishDataset(ctx, changed); !errors.Is(e, ErrOperationConflict) || bad.checks != 0 {
+		t.Fatal(e, bad.checks)
+	}
+	c.OperationID = "00000000000000000000000000000003"
+	if _, e = s.PublishDataset(ctx, c); !errors.Is(e, ErrStorage) || bad.checks != 1 {
+		t.Fatal(e, bad.checks)
+	}
+}
+
+func TestClosedTransactionCannotChangeCommit(t *testing.T) {
+	ctx := context.Background()
+	m, e := NewLocalMetadata(t.TempDir())
+	if e != nil {
+		t.Fatal(e)
+	}
+	if e = m.InitRepository(ctx, repo); e != nil {
+		t.Fatal(e)
+	}
+	started := make(chan struct{})
+	release := make(chan struct{})
+	m.testHook = func(phase string) error {
+		if phase == "before_rename" {
+			close(started)
+			<-release
+		}
+		return nil
+	}
+	txCh := make(chan Tx, 1)
+	done := make(chan error, 1)
+	recordID := ID("00000000000000000000000000000004")
+	kind := Dataset
+	cmd := Command{1, repo, op, "publish_dataset", DatasetBody{Files: []DatasetFile{}}, nil}
+	result := Receipt{SchemaVersion: 1, OperationID: op, RecordKind: &kind, RecordID: &recordID, Sequence: 1}
+	go func() {
+		done <- m.Update(ctx, func(tx Tx) error {
+			txCh <- tx
+			if e := tx.AddRecord(Record{1, recordID, Dataset, 1, cmd.Body.(DatasetBody)}); e != nil {
+				return e
+			}
+			return tx.AddOperation(op, Operation{cmd, result})
+		})
+	}()
+	tx := <-txCh
+	<-started
+	var wg sync.WaitGroup
+	errs := make(chan error, 4)
+	for i := 0; i < 4; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 100; j++ {
+				if tx.View() != nil {
+					errs <- errors.New("closed view")
+					return
+				}
+				if e := tx.AddRecord(Record{ID: "00000000000000000000000000000005"}); !errors.Is(e, ErrInvalidInput) {
+					errs <- e
+					return
+				}
+				if e := tx.CompareAndSwapReference("x", 0, Reference{}); !errors.Is(e, ErrInvalidInput) {
+					errs <- e
+					return
+				}
+			}
+		}()
+	}
+	wg.Wait()
+	close(errs)
+	for e := range errs {
+		t.Fatal(e)
+	}
+	close(release)
+	if e = <-done; e != nil {
+		t.Fatal(e)
+	}
+	v, e := m.Read(ctx)
+	if e != nil || v.Sequence() != 1 || len(v.ListRecords()) != 1 {
+		t.Fatal(v, e)
 	}
 }
