@@ -12,3 +12,11 @@ MVP ограничен одним доверенным пайплайном. Я�
 - [Архитектура и жизненный цикл версии](docs/architecture.md)
 - [Компонентная карта и контракты](docs/components.md)
 - [SVG-карта](docs/component-map.svg)
+
+## Development baseline
+
+- [MVP specification](docs/mvp-spec.md): requested behavior, invariants and open questions.
+- [Local prototype contracts](docs/local-contracts.md): independently testable first slice.
+- [Development instructions](AGENTS.md): roles, exact-commit review and integration.
+
+These documents do not accept the proposed ADRs or imply that planned operations are implemented.
