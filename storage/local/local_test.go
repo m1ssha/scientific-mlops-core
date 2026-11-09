@@ -49,6 +49,9 @@ func TestObjects(t *testing.T) {
 	if e = s.Verify(ctx, r); !errors.Is(e, object.ErrNotFound) {
 		t.Fatal(e)
 	}
+	if f, err := s.Open(ctx, r); f != nil || !errors.Is(err, object.ErrNotFound) {
+		t.Fatalf("missing Open: reader=%v error=%v", f, err)
+	}
 	bad := r
 	bad.Size++
 	if _, e = s.Put(ctx, bad, bytes.NewReader([]byte("hello"))); !errors.Is(e, object.ErrIntegrity) {
@@ -93,8 +96,8 @@ func TestObjects(t *testing.T) {
 	if e = s.Verify(ctx, r); !errors.Is(e, object.ErrIntegrity) {
 		t.Fatal(e)
 	}
-	if _, e = s.Open(ctx, r); !errors.Is(e, object.ErrIntegrity) {
-		t.Fatal(e)
+	if f, err := s.Open(ctx, r); f != nil || !errors.Is(err, object.ErrIntegrity) {
+		t.Fatalf("corrupt Open: reader=%v error=%v", f, err)
 	}
 	if _, e = s.Put(ctx, r, bytes.NewReader([]byte("hello"))); !errors.Is(e, object.ErrIntegrity) {
 		t.Fatal(e)
@@ -201,20 +204,26 @@ func TestProcessHelper(t *testing.T) {
 	}
 }
 
+// The second read happens only after Put has written the first chunk to staging.
 type gateReader struct {
 	entered chan struct{}
 	proceed chan struct{}
-	done    bool
+	step    int
 }
 
 func (r *gateReader) Read(p []byte) (int, error) {
-	if r.done {
+	switch r.step {
+	case 0:
+		r.step++
+		return copy(p, "pend"), nil
+	case 1:
+		r.step++
+		close(r.entered)
+		<-r.proceed
+		return copy(p, "ing"), nil
+	default:
 		return 0, io.EOF
 	}
-	r.done = true
-	close(r.entered)
-	<-r.proceed
-	return copy(p, []byte("pending")), nil
 }
 func TestNoPartialVisibility(t *testing.T) {
 	s, e := New(t.TempDir())
@@ -232,5 +241,84 @@ func TestNoPartialVisibility(t *testing.T) {
 	close(g.proceed)
 	if e = <-done; e != nil {
 		t.Fatal(e)
+	}
+	if e = s.Verify(context.Background(), r); e != nil {
+		t.Fatal(e)
+	}
+}
+func TestCancellationDuringTransfer(t *testing.T) {
+	s, e := New(t.TempDir())
+	if e != nil {
+		t.Fatal(e)
+	}
+	r := ref([]byte("pending"))
+	g := &gateReader{entered: make(chan struct{}), proceed: make(chan struct{})}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan error, 1)
+	go func() { _, e := s.Put(ctx, r, g); done <- e }()
+	<-g.entered
+	cancel()
+	close(g.proceed)
+	if e = <-done; !errors.Is(e, context.Canceled) {
+		t.Fatal(e)
+	}
+	if e = s.Verify(context.Background(), r); !errors.Is(e, object.ErrNotFound) {
+		t.Fatal(e)
+	}
+}
+
+type dataErrorReader struct {
+	data []byte
+	err  error
+}
+
+func (r *dataErrorReader) Read(p []byte) (int, error) {
+	n := copy(p, r.data)
+	r.data = r.data[n:]
+	return n, r.err
+}
+func TestReaderErrorAfterData(t *testing.T) {
+	payload := []byte("pending")
+	r := ref(payload)
+	readErr := errors.New("interrupted input")
+	for _, tc := range []struct {
+		name     string
+		data     []byte
+		existing bool
+	}{
+		{"partial", payload[:3], false}, {"complete", payload, false}, {"complete existing", payload, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			s, e := New(t.TempDir())
+			if e != nil {
+				t.Fatal(e)
+			}
+			if tc.existing {
+				if _, e = s.Put(context.Background(), r, bytes.NewReader(payload)); e != nil {
+					t.Fatal(e)
+				}
+			}
+			if _, e = s.Put(context.Background(), r, &dataErrorReader{data: tc.data, err: readErr}); !errors.Is(e, readErr) {
+				t.Fatalf("expected reader error: %v", e)
+			}
+			e = s.Verify(context.Background(), r)
+			if tc.existing {
+				if e != nil {
+					t.Fatal(e)
+				}
+				f, err := s.Open(context.Background(), r)
+				if err != nil {
+					t.Fatal(err)
+				}
+				got, err := io.ReadAll(f)
+				f.Close()
+				if err != nil || !bytes.Equal(got, payload) {
+					t.Fatalf("existing bytes %q: %v", got, err)
+				}
+			} else if !errors.Is(e, object.ErrNotFound) {
+				t.Fatalf("unexpected publication: %v", e)
+			}
+		})
 	}
 }

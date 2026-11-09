@@ -1,6 +1,6 @@
 # Scientific MLOps Core
 
-Проект ядра версионирования данных и вычислительных экспериментов. Пока здесь находится архитектурный черновик с предлагаемыми решениями, а не описание реализованных гарантий.
+Проект ядра версионирования данных и вычислительных экспериментов. Реализован локальный прототип хранилища объектов с проверкой целостности; остальные операции находятся на стадии проектирования. Архитектурные решения остаются предлагаемыми.
 
 Ядро определяет, что считается версией датасета и снимком условий эксперимента, как они связаны с конкретным запуском, как сравнить состояния и подготовить восстановление. Оно не управляет пользователями, веб-интерфейсом или вычислительным кластером.
 
@@ -21,16 +21,15 @@ MVP ограничен одним доверенным пайплайном. Я�
 
 These documents do not accept the proposed ADRs or imply that planned operations are implemented.
 
-## Object prototype
+## Прототип хранилища объектов
 
-The local object slice provides the Go `object.Store` interface, the
-`storage/local` adapter and `smlops object put`, `verify`, and `get`. See the
-[local contracts](docs/local-contracts.md#first-slice-verified-objects) for
-arguments, JSON output and errors. Other operations described above remain
-planned. Use Go 1.27.3; run `go test ./...` to check the implementation.
+Реализованы интерфейс Go `object.Store`, локальный адаптер `storage/local` и
+команды `smlops object put`, `verify` и `get`. Аргументы, формат JSON и ошибки
+описаны в [локальных контрактах](docs/local-contracts.md#first-slice-verified-objects).
+Для сборки используется Go 1.27.3; проверка запускается командой `go test ./...`.
 
-Objects are verified before publication and before an open returns. Atomic
-create-if-absent prevents replacing an existing address. Cancellation after
-publication can leave a valid object; verify its reference to determine its
-state. The local Linux prototype assumes a trusted owner and filesystem and
-makes no power-loss or hostile-owner guarantee.
+Объект проверяется перед публикацией и перед открытием. Атомарное создание не
+позволяет заменить объект по существующему адресу. Отмена после публикации
+может оставить корректный объект; его состояние можно выяснить проверкой.
+Прототип рассчитан на локальную Linux-систему с доверенным владельцем и не
+гарантирует сохранность при потере питания или защиту от действий владельца.

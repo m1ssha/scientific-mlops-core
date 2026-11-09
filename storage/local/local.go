@@ -170,7 +170,11 @@ func (s *Store) Verify(ctx context.Context, ref object.Ref) error {
 	return nil
 }
 func (s *Store) Open(ctx context.Context, ref object.Ref) (io.ReadCloser, error) {
-	return s.open(ctx, ref)
+	f, err := s.open(ctx, ref)
+	if err != nil {
+		return nil, err
+	}
+	return f, nil
 }
 func (s *Store) Put(ctx context.Context, ref object.Ref, reader io.Reader) (object.Ref, error) {
 	var zero object.Ref
