@@ -20,3 +20,17 @@ MVP ограничен одним доверенным пайплайном. Я�
 - [Development instructions](AGENTS.md): roles, exact-commit review and integration.
 
 These documents do not accept the proposed ADRs or imply that planned operations are implemented.
+
+## Object prototype
+
+The local object slice provides the Go `object.Store` interface, the
+`storage/local` adapter and `smlops object put`, `verify`, and `get`. See the
+[local contracts](docs/local-contracts.md#first-slice-verified-objects) for
+arguments, JSON output and errors. Other operations described above remain
+planned. Use Go 1.27.3; run `go test ./...` to check the implementation.
+
+Objects are verified before publication and before an open returns. Atomic
+create-if-absent prevents replacing an existing address. Cancellation after
+publication can leave a valid object; verify its reference to determine its
+state. The local Linux prototype assumes a trusted owner and filesystem and
+makes no power-loss or hostile-owner guarantee.
