@@ -1,0 +1,6 @@
+{
+  "phase": "pilot",
+  "code_revision": "3b14f2618a1da9268ceba34566df4ad7e67e6081",
+  "attempts": 3,
+  "note": "Runtime validation corrected; a protocol transition test was subsequently fixed."
+}

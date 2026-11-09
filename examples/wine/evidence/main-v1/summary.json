@@ -1,0 +1,48 @@
+{
+  "series": "main-v1",
+  "frozen_revision": "2ecae3a2e2703fff651efa7d72e0e1b429670286",
+  "code_revision": "498bdefe3ee7d64db632910e3948c8d147738959",
+  "phase": "main",
+  "attempts": [
+    {
+      "name": "reference",
+      "run_id": "9b54bad3-2fca-47b6-a675-166d2f0042e6",
+      "status": "success",
+      "phase": "main",
+      "started_at": "2026-11-09T13:15:32.383712+00:00",
+      "finished_at": "2026-11-09T13:15:33.221897+00:00"
+    },
+    {
+      "name": "repeat-1",
+      "run_id": "2f328fbc-317f-4682-9e69-14cfd6ed81c2",
+      "status": "success",
+      "phase": "main",
+      "started_at": "2026-11-09T13:15:33.536836+00:00",
+      "finished_at": "2026-11-09T13:15:34.325528+00:00"
+    },
+    {
+      "name": "repeat-2",
+      "run_id": "8abc3e2d-1218-4c0f-9c65-c7a2ce8863e5",
+      "status": "success",
+      "phase": "main",
+      "started_at": "2026-11-09T13:15:34.738834+00:00",
+      "finished_at": "2026-11-09T13:15:35.561358+00:00"
+    },
+    {
+      "name": "fresh-venv",
+      "run_id": "0b24d48f-90b1-4af1-b395-39b9a0ccfa73",
+      "status": "success",
+      "phase": "main",
+      "started_at": "2026-11-09T13:15:46.182847+00:00",
+      "finished_at": "2026-11-09T13:15:47.379413+00:00"
+    }
+  ],
+  "fresh_environment": {
+    "base_python": "pre-existing CPython 3.12.15",
+    "venv": "new",
+    "source": "verified local wheelhouse",
+    "pip_cache": "disabled",
+    "network_during_install": "disabled"
+  },
+  "scope": "one host; separate clean materializations; not a cross-machine test"
+}

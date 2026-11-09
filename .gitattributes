@@ -1,0 +1,3 @@
+# Preserve hash-addressed source data and CSV evidence byte-for-byte.
+examples/wine/data/wine.data -text
+examples/wine/evidence/**/predictions.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

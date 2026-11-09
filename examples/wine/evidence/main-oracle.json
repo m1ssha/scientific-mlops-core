@@ -1,0 +1,318 @@
+[
+  {
+    "attempt": "reference",
+    "run_id": "9b54bad3-2fca-47b6-a675-166d2f0042e6",
+    "raw_source_oracle": "passed",
+    "scores": {
+      "model": {
+        "confusion_matrix": [
+          [
+            15,
+            0,
+            0
+          ],
+          [
+            0,
+            18,
+            0
+          ],
+          [
+            0,
+            0,
+            12
+          ]
+        ],
+        "support": [
+          15,
+          18,
+          12
+        ],
+        "correct": 45,
+        "n": 45,
+        "accuracy": {
+          "numerator": 1,
+          "denominator": 1,
+          "value": 1.0
+        },
+        "balanced_accuracy": {
+          "numerator": 1,
+          "denominator": 1,
+          "value": 1.0
+        }
+      },
+      "dummy": {
+        "confusion_matrix": [
+          [
+            0,
+            15,
+            0
+          ],
+          [
+            0,
+            18,
+            0
+          ],
+          [
+            0,
+            12,
+            0
+          ]
+        ],
+        "support": [
+          15,
+          18,
+          12
+        ],
+        "correct": 18,
+        "n": 45,
+        "accuracy": {
+          "numerator": 2,
+          "denominator": 5,
+          "value": 0.4
+        },
+        "balanced_accuracy": {
+          "numerator": 1,
+          "denominator": 3,
+          "value": 0.3333333333333333
+        }
+      }
+    }
+  },
+  {
+    "attempt": "repeat-1",
+    "run_id": "2f328fbc-317f-4682-9e69-14cfd6ed81c2",
+    "raw_source_oracle": "passed",
+    "scores": {
+      "model": {
+        "confusion_matrix": [
+          [
+            15,
+            0,
+            0
+          ],
+          [
+            0,
+            18,
+            0
+          ],
+          [
+            0,
+            0,
+            12
+          ]
+        ],
+        "support": [
+          15,
+          18,
+          12
+        ],
+        "correct": 45,
+        "n": 45,
+        "accuracy": {
+          "numerator": 1,
+          "denominator": 1,
+          "value": 1.0
+        },
+        "balanced_accuracy": {
+          "numerator": 1,
+          "denominator": 1,
+          "value": 1.0
+        }
+      },
+      "dummy": {
+        "confusion_matrix": [
+          [
+            0,
+            15,
+            0
+          ],
+          [
+            0,
+            18,
+            0
+          ],
+          [
+            0,
+            12,
+            0
+          ]
+        ],
+        "support": [
+          15,
+          18,
+          12
+        ],
+        "correct": 18,
+        "n": 45,
+        "accuracy": {
+          "numerator": 2,
+          "denominator": 5,
+          "value": 0.4
+        },
+        "balanced_accuracy": {
+          "numerator": 1,
+          "denominator": 3,
+          "value": 0.3333333333333333
+        }
+      }
+    }
+  },
+  {
+    "attempt": "repeat-2",
+    "run_id": "8abc3e2d-1218-4c0f-9c65-c7a2ce8863e5",
+    "raw_source_oracle": "passed",
+    "scores": {
+      "model": {
+        "confusion_matrix": [
+          [
+            15,
+            0,
+            0
+          ],
+          [
+            0,
+            18,
+            0
+          ],
+          [
+            0,
+            0,
+            12
+          ]
+        ],
+        "support": [
+          15,
+          18,
+          12
+        ],
+        "correct": 45,
+        "n": 45,
+        "accuracy": {
+          "numerator": 1,
+          "denominator": 1,
+          "value": 1.0
+        },
+        "balanced_accuracy": {
+          "numerator": 1,
+          "denominator": 1,
+          "value": 1.0
+        }
+      },
+      "dummy": {
+        "confusion_matrix": [
+          [
+            0,
+            15,
+            0
+          ],
+          [
+            0,
+            18,
+            0
+          ],
+          [
+            0,
+            12,
+            0
+          ]
+        ],
+        "support": [
+          15,
+          18,
+          12
+        ],
+        "correct": 18,
+        "n": 45,
+        "accuracy": {
+          "numerator": 2,
+          "denominator": 5,
+          "value": 0.4
+        },
+        "balanced_accuracy": {
+          "numerator": 1,
+          "denominator": 3,
+          "value": 0.3333333333333333
+        }
+      }
+    }
+  },
+  {
+    "attempt": "fresh-venv",
+    "run_id": "0b24d48f-90b1-4af1-b395-39b9a0ccfa73",
+    "raw_source_oracle": "passed",
+    "scores": {
+      "model": {
+        "confusion_matrix": [
+          [
+            15,
+            0,
+            0
+          ],
+          [
+            0,
+            18,
+            0
+          ],
+          [
+            0,
+            0,
+            12
+          ]
+        ],
+        "support": [
+          15,
+          18,
+          12
+        ],
+        "correct": 45,
+        "n": 45,
+        "accuracy": {
+          "numerator": 1,
+          "denominator": 1,
+          "value": 1.0
+        },
+        "balanced_accuracy": {
+          "numerator": 1,
+          "denominator": 1,
+          "value": 1.0
+        }
+      },
+      "dummy": {
+        "confusion_matrix": [
+          [
+            0,
+            15,
+            0
+          ],
+          [
+            0,
+            18,
+            0
+          ],
+          [
+            0,
+            12,
+            0
+          ]
+        ],
+        "support": [
+          15,
+          18,
+          12
+        ],
+        "correct": 18,
+        "n": 45,
+        "accuracy": {
+          "numerator": 2,
+          "denominator": 5,
+          "value": 0.4
+        },
+        "balanced_accuracy": {
+          "numerator": 1,
+          "denominator": 3,
+          "value": 0.3333333333333333
+        }
+      }
+    }
+  }
+]
