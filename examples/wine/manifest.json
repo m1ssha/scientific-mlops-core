@@ -1,12 +1,12 @@
 {
   "files": {
-    "README.md": "75f220364a2fbcf682dad5c0a153c778e75f4ec6fd28bd5df4ee5e0befcfbdea",
+    "README.md": "f6dbcd87d778a6dea84568a3ce61d29f018017e8335310584a2d9d3f4b4a954a",
     "config.json": "2ccf75e06a3083747ee7e28c36d54d34352bf542474659624574d4e2beb6a361",
     "data/SOURCE.md": "e44a12f115ad67607eb9a939450226736152425c6a193ce664442a0a3f755dbd",
     "data/wine.data": "6be6b1203f3d51df0b553a70e57b8a723cd405683958204f96d23d7cd6aea659",
     "pipeline.py": "987c1c919830ba38f7caab79ccecf0c839e1d66823cd8ffb910f2094adcff4bf",
     "prepare_split.py": "b6c697896fe59055ca8d52b1831e8950bbf73ca0ae15adf2b64404fd2d2bdb88",
-    "protocol.json": "a3d890848789461646cf1f952e0aa41cbedb531cd602c1c52f0a8af8032ee73e",
+    "protocol.json": "9057ec64676bcf39558955687af8e6425487a498e6f97de1b72145a966c681df",
     "requirements.lock": "074a34a6da4618dbcf50315add680a8e7693670d97593abf61872d0dadc58e10",
     "split.json": "1b3b2d938daf1e0058601946bbf3a672d3816025403e90cc24b84fc2ab3eb66d",
     "test_pipeline.py": "e47909421b1c9bc8b231899c26d5c2782f66cdbe0653e1a9997b9fec6d685cc9"

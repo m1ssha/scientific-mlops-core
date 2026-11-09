@@ -1,26 +1,106 @@
 # Учебный эксперимент Wine
 
-Самостоятельный CPU-пример, не зависящий от ядра. Протокол `protocol.json` пока draft: пилоты не являются основными испытаниями. Полные условия приведены в `docs/wine-experiment-design.md` репозитория. Фиксированные входы включают данные UCI, разбиение с 1-based row ID, параметры, код, протокол и lock; manifest.json содержит SHA-256 каждого файла, кроме себя. Изменения требуют нового манифеста и делают условия другими. Манифест удостоверяет целостность относительно самого себя, а не подлинность источника.
+Самостоятельный CPU-пайплайн для проверки повторения вычислительного эксперимента.
+Он обучает StandardScaler + LogisticRegression и контрольный DummyClassifier
+most_frequent на фиксированном разбиении UCI Wine. Ядро Go не участвует в обучении.
+[Дизайн и границы эксперимента](../../docs/wine-experiment-design.md),
+[происхождение и лицензия данных](data/SOURCE.md).
 
-Нужны CPython 3.12.15, Linux x86_64 и зависимости из requirements.lock. Python и wheels не включены; их доступность для восстановления отдельно от текущей среды. Например, в новой среде:
+Протокол версии 1 в protocol.json зафиксирован после независимого ревью и пилотов,
+до основных испытаний. Пилоты, проверки инструмента и основные исполнения имеют
+разные фазы в result.json. Все канонические запуски используют C=1.0; отдельно
+объявлен контроль C=2.0, который не обязан менять качество и не считается основным
+испытанием. Остальные параметры не подбираются по test.
+
+## Установка и проверка
+
+Нужны CPython 3.12.15, Linux x86_64 и зависимости с хешами из requirements.lock.
+Команды ниже выполняются из корня репозитория в новой виртуальной среде:
 
 ```sh
-python -m pip install --require-hashes -r examples/wine/requirements.lock
-python examples/wine/pipeline.py verify --root examples/wine
-python examples/wine/pipeline.py verify --root examples/wine --wheelhouse /path/to/wheels
-python -m unittest discover -s examples/wine -p 'test_*.py'
+python3.12 --version
+python3.12 -m venv .venv
+.venv/bin/python -m pip install --require-hashes -r examples/wine/requirements.lock
+.venv/bin/python examples/wine/pipeline.py verify --root examples/wine
+.venv/bin/python -m unittest discover -s examples/wine -p 'test_*.py'
 ```
 
-Скопируйте весь каталог examples/wine в каждый чистый каталог и выполняйте именно его код. Выходной каталог должен отсутствовать, а его родитель — существовать. Команды повторно обучают модель, не используют выходы эталона:
+Python и wheels не включены в репозиторий. Для установки обычно нужна сеть.
+Наличие lock-файла не означает доступность пакетов. Если имеется локальный
+wheelhouse, его проверяют отдельно:
 
 ```sh
-python bundle-a/pipeline.py run --phase validation --root bundle-a --out result-a
-python bundle-b/pipeline.py run --phase validation --root bundle-b --out result-b
-python bundle-a/pipeline.py compare --root-a bundle-a --a result-a --root-b bundle-b --b result-b
+.venv/bin/python examples/wine/pipeline.py verify --root examples/wine --wheelhouse /path/to/wheels
 ```
 
-Команды печатают JSON и завершаются с ненулевым кодом при ошибке или отсутствии численного pass. `result.json` содержит уникальный ID, времена и хеши; при ошибке выполнения создаётся запись failed. Данные и предсказания не являются доказательством переносимости. Сравнение проверяет предсказания и метрики независимо от обучения, включая метки из исходного файла и порядок разбиения. Для создания манифеста после намеренного изменения материалов служит `python bundle/pipeline.py manifest --root bundle`; проверяйте изменения отдельно. Генерация исходного разбиения в закреплённой среде: `python examples/wine/prepare_split.py > split.generated.json`; сравните байты с examples/wine/split.json. Команда генерации не заменяет существующее разбиение.
+Это проверяет сохранённые хеши семи wheels; наличие базового Python, совместимость
+ОС и полноту всех скрытых условий среды таким действием не доказывают.
 
-Фазы: `pilot` — пилот, `validation` — проверка инструмента (по умолчанию), `main` — основное испытание. Последняя разрешена только при статусе frozen и проверенной записи freeze с SHA-256 pipeline.py и prepare_split.py, 40-символьным Git SHA версии кода и временем фиксации UTC; канонический параметр C=1.0. Контрольное значение C=2.0 заранее объявлено для отдельного запуска и не считается основным испытанием. Перед записью результата код проверяет соответствие активного файла каталогу входов и неизменность всех материалов с начала запуска. Сравнение возвращает отдельные статусы: materials equal/different/invalid, conditions equal/different/invalid/unchecked, execution valid/failed/invalid/unchecked, numerical pass/different/incomparable/unchecked.
- Для фиксации протокола после ревью явно обновляют `status` на `frozen`, поле `freeze` на объект `{"code_revision": "<40 hex SHA>", "code_files": {"pipeline.py": "<SHA-256>", "prepare_split.py": "<SHA-256>"}, "frozen_at": "<ISO-8601 UTC>"}` и затем заново создают манифест. Протокол и манифест в code_files не входят. Самостоятельной фиксации после пилотов не происходит.
- Поле code_revision сохраняет заявленную версию кода; автономная проверка файлов не доказывает происхождение Git-коммита.
+## Два самостоятельных исполнения
+
+Создаётся новый временный каталог с двумя копиями материалов. Каждый процесс
+исполняет код своей копии и заново обучает модель; результаты эталона не читаются.
+Выходные каталоги должны отсутствовать, существующие не перезаписываются.
+
+```sh
+wine_demo_root="$(mktemp -d)"
+cp -R examples/wine "$wine_demo_root/a"
+cp -R examples/wine "$wine_demo_root/b"
+.venv/bin/python -I "$wine_demo_root/a/pipeline.py" run --phase main --root "$wine_demo_root/a" --out "$wine_demo_root/result-a"
+.venv/bin/python -I "$wine_demo_root/b/pipeline.py" run --phase main --root "$wine_demo_root/b" --out "$wine_demo_root/result-b"
+.venv/bin/python -I "$wine_demo_root/a/pipeline.py" compare --root-a "$wine_demo_root/a" --a "$wine_demo_root/result-a" --root-b "$wine_demo_root/b" --b "$wine_demo_root/result-b"
+```
+
+Команды печатают JSON, ошибки и отсутствие численного pass дают ненулевой код.
+Выходы: predictions.csv, metrics.json, model.json, environment.json и result.json
+с новым run_id, временами и хешами. Модель сохраняется безопасным JSON без pickle.
+run_id и времена разных выполнений не обязаны совпадать. Неуспешное исполнение
+получает status failed и не считается воспроизведённым.
+
+Сравнение восстанавливает y_true из исходного файла и row_id, проверяет порядок
+и состав test и независимо пересчитывает обе матрицы ошибок/метрики.
+Каноническая арифметика использует точные дроби и одно преобразование в float;
+допуск не вводится. Предсказания, целые счётчики и метрики сравниваются точно
+при совпавших материалах и обязательном отпечатке среды. Коэффициенты модели
+не сравниваются побайтово.
+
+Статусы раздельны: materials equal/different/invalid; conditions
+ equal/different/invalid/unchecked; execution valid/failed/invalid/unchecked;
+numerical pass/different/incomparable/unchecked. Повреждение или отсутствующая
+метрика не превращаются в pass. Совпадение двух неполных описаний среды не считается
+совпадением обязательных условий. Отпечаток не удостоверяет физическую машину
+и не доказывает, что все существенные зависимости обнаружены.
+
+## Материалы и изменение условий
+
+Манифест содержит SHA-256 входов, кода, протокола, документации и lock-файла,
+кроме самого себя; его собственный хеш сохраняется в результате. Он проверяет
+целостность относительно сохранённого описания, не подлинность источника.
+Исполнение связано с активным файлом кода в проверяемой копии; материалы повторно
+проверяются перед записью успеха. Преднамеренное изменение требует нового
+манифеста и создаёт другие условия:
+
+```sh
+.venv/bin/python bundle/pipeline.py manifest --root bundle
+```
+
+Контроль C=2.0 выполняется с фазой validation. Различие условий даёт incomparable,
+даже если метрики случайно совпали. Генератор разбиения не заменяет сохранённое
+разбиение автоматически:
+
+```sh
+.venv/bin/python examples/wine/prepare_split.py > split.generated.json
+```
+
+Фаза main требует frozen, проверенных хешей pipeline.py/prepare_split.py,
+заявленного Git SHA версии кода и времени фиксации UTC. Этот Git SHA является
+утверждением координатора, а не автономным доказательством происхождения кода.
+CI использует фазу validation. В repo не реализованы каталог ядра, публикация
+снимков/запусков или интеграция восстановления; это отдельные задачи.
+
+## Что устанавливает этот пример
+
+Один небольшой набор, одно разбиение и повторы на одной машине проверяют
+ограниченный инженерный сценарий. Они не оценивают вероятность воспроизведения,
+обобщающую способность классификатора, масштабируемость или научную новизну.
+Чистая venv на том же хосте не равна переносу на другую ОС/архитектуру.

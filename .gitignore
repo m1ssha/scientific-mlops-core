@@ -3,3 +3,5 @@
 # Python example cache
 __pycache__/
 *.py[cod]
+
+.venv/
