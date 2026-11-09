@@ -24,7 +24,9 @@ flock, атомарным rename в одном каталоге, hard link и fs
 
 Все приведённые ниже JSON-объекты закрытые: неизвестные и повторяющиеся ключи,
 невалидный UTF-8, второй документ после первого и неверные типы отклоняются.
-Поле schema_version обязательно и равно целому 1. Неподдерживаемая версия
+Поле schema_version обязательно и равно целому 1 на уровне envelope, Record,
+Command, Receipt, Diff, RecoveryPlan и ответов CLI. Вложенные Body/TypedValue
+не имеют отдельного поля версии. Неподдерживаемая версия
 даёт unsupported_schema; не предпринимать миграцию или перезапись истории.
 Числа NaN/Infinity запрещены. Целые поля принимают десятичную целочисленную
 запись без дроби/экспоненты, помещающуюся в int64; счётчики неотрицательны.
@@ -115,8 +117,12 @@ unchecked. Это утверждения клиента, а не проверк�
 Metric: {definition, unit, value}; definition и unit - непустые строки,
 value - конечное binary64. Отсутствующая метрика не превращается в ноль.
 Смысл definition/unit задаёт версия паспорта. Не интерпретировать метрику
-только по отображаемому имени. Сравнение одинаковых definition/unit показывает
-right minus left; переполнение разности даёт incomparable, не Infinity.
+только по отображаемому имени. Для численного сравнения требуются одинаковые
+profile_id связанных снимков и одинаковые definition/unit. Разные профили
+дают incomparable даже при совпавших строках определения, единицах и значениях:
+схема 1 не предполагает глобального реестра эквивалентных определений.
+При совместимости разность - right minus left; её переполнение даёт
+incomparable, не Infinity.
 Outputs уникальны по path, role/media_type непустые. Все перечисленные локальные
 объекты outputs должны быть проверены при регистрации, неизвестные выходы
 не добавляются. При failed/interrupted разрешены пустые outputs/metrics.
@@ -207,7 +213,10 @@ metadata и блокирует повторный init; автоматическ
 OpenRepository не создаёт метаданные. При отсутствии metadata - not_initialized;
 при существующем metadata и отсутствии catalog.json/lock - integrity с деталями
 incomplete_or_missing_catalog. Нельзя различить потерю истории и неполный init
-по одному остатку; требуется ручная диагностика. Порча lock/layout - integrity
+по одному остатку; требуется ручная диагностика. Удаление всего metadata
+неотличимо от хранилища только объектов: Open возвращает not_initialized,
+но никогда не вызывает Init автоматически. Инициализация - явная операция
+создания проекта, не способ восстановления утраченной истории. Порча lock/layout - integrity
 или storage для системной I/O ошибки. Симлинки и нерегулярные служебные файлы
 отклоняются. Не восстанавливать каталог из orphan-объектов или времени staging.
 
@@ -251,11 +260,15 @@ RegisterRun(context.Context, Command) (Receipt, error)
 SetReference(context.Context, Command) (Receipt, error)
 GetOperation(context.Context, ID) (Receipt, error)
 Read(context.Context) (View, error)
+Compare(context.Context, RecordKind, ID, ID) (Diff, error)
+PlanRecovery(context.Context, ID) (RecoveryPlan, error)
 ```
 
-Каждый мутирующий метод требует соответствующий type. View - независимое
-неизменяемое представление проверенного поколения; его методы GetRecord,
-GetReference, ListRecords, Compare и PlanRecovery не меняют хранилище.
+Каждый мутирующий метод требует соответствующий type. RecordKind - строковый
+тип dataset/snapshot/run. View - независимое представление проверенного
+поколения с GetRecord, GetReference и ListRecords; изменение клиентской копии
+не меняет хранилище. Compare и PlanRecovery принадлежат Service: каждый читает
+один View, PlanRecovery дополнительно использует отдельный object.Store.
 Compare принимает kind и два ID одного вида; PlanRecovery принимает run ID.
 Порт метаданных: Read(ctx) (View,error) и Update(ctx, func(Tx) error) error.
 Tx предоставляет текущий View и методы добавления Record/operation result/CAS;
@@ -303,17 +316,40 @@ missing_dependency; существующий испорченный - integrity;
 В recovery проблемы материалов входят в отчёт, ошибка чтения каталога - ошибка
 операции без частичного равенства/готовности.
 
-Diff имеет schema_version, view_sequence, kind, left_id, right_id, changes.
-Change: {path, kind, left, right, delta}; kind added/removed/changed/incomparable,
-left/right - соответствующее сохранённое JSON-значение или null при отсутствии.
-Путь - JSON Pointer к полю, ключи экранируются; файлы именуются своим path,
-а не случайным индексом. Отсутствие отличается от явного null по kind и стороне.
-Сортировка по path, затем kind; временные/логические ID остаются отдельными
-полями отчёта, сравнение условий не объявляет два run одной записью.
-Для run вложенные разделы: conditions, outcome, metrics, outputs; числовая
-разность метрики - поле delta у Change; для остальных изменений и incomparable
-оно равно null.
-Текущая доступность файлов, допуски и ранжирование в Diff не входят.
+Diff имеет ровно schema_version, view_sequence, kind, left_id, right_id,
+changes. Это одна плоская форма ответа для всех видов, без вложенных секций
+changes. Сравнивается нормализованная проекция, а не позиции массивов исходного
+Record. Поля id, sequence и predecessor_id не участвуют в равенстве условий.
+
+| kind | Проекция для сравнения |
+| --- | --- |
+| dataset | files: карта path -> object |
+| snapshot | profile_id; inputs: карта role -> {dataset_id,target_prefix}; code; parameters; split; environment; materials: карта name -> Material |
+| run | conditions: проекция связанного snapshot; provenance: {snapshot_id,source_run_id}; timing: {started_at,finished_at}; outcome; reason; evidence_source; observations; metrics; outputs: карта path -> {role,media_type,object} |
+
+Change имеет ровно path, kind, left, right, delta. kind:
+added/removed/changed/incomparable. path - JSON Pointer в эту проекцию:
+slash/tilde в ключе экранируются как ~1/~0. Упорядоченные массивы имён материалов
+сравниваются целиком; карты обходятся по ключам. Элементы files, inputs,
+materials, parameters, observations, metrics и outputs сравниваются атомарно
+по целому значению элемента; остальные объекты - по полям, scalar - по значению.
+Сортировка Changes - по path, затем kind, без дублирования изменений родителя
+и его потомка. Массив changes пуст только при отсутствии различий и препятствий.
+
+left/right содержат сравниваемые сохранённые значения; для отсутствующей стороны
+используется null, а kind показывает отсутствие: added означает, что слева нет
+ключа, removed - что справа нет ключа. changed с left=null означает явно
+сохранённый null, а не отсутствие. delta - конечная числовая разность совместимых
+метрик; во всех других случаях null. Разные profile_id/definition/unit дают
+incomparable даже при одинаковом значении; отсутствие метрики даёт added/removed,
+а не разность от нуля. Для совместимых неизменившихся метрик Change не создаётся.
+
+У двух run одного snapshot нет различий в conditions; разные run ID остаются
+в left_id/right_id. Происхождение повтора, времена, наблюдения и evidence_source
+участвуют в собственных полях проекции run, не в равенстве условий. Текущая
+доступность файлов, допуски и ранжирование в Diff не входят.
+[Примеры diff](contracts/v1/diff-examples.json) относятся к тому же каталогу:
+переименование показано removed+added; явный null исходного source_run_id - changed.
 
 ## План восстановления
 
@@ -356,7 +392,7 @@ Blockers запрещают продвижение соответствующе�
 ## Примеры и границы приёмки
 
 [Пример каталога и команд](contracts/v1/catalog-example.json) содержит две
-разные попытки одного снимка. [Заблокированный план](contracts/v1/recovery-example.json)
+разные попытки одного снимка и новую версию данных. [Заблокированный план](contracts/v1/recovery-example.json)
 показывает все пять исходов проверки и внешнюю непроверенную зависимость.
 Это синтетические контрактные примеры, не результаты ML-испытаний.
 
@@ -367,5 +403,12 @@ ABA, равный retry и изменённый запрос, неизвестн
 выдуманных наблюдений, неверные ссылки и типизированные параметры.
 Перед recovery: missing/corrupt/io_error/unchecked required блокируют ready,
 необязательный output не блокирует входы, последующая потеря требует перепроверки.
+При разборе Command нарушение схемы даёт invalid_input; то же нарушение
+в сохранённом каталоге - integrity, кроме явно неподдерживаемой версии
+(unsupported_schema). Сохранённый commit - утверждение клиента о происхождении
+кода; соответствие сохранённых файлов Git-коммиту требует отдельной внешней
+проверки. PlanMaterial с purpose=original_output материализуется в отдельный
+каталог исходных результатов, остальные - в каталог входных условий.
+
 Эти проверки ещё не выполнены реализацией метаданных. #2 проверяет согласованность
 контрактов, примеры, ссылки, публичность и независимое ревью конкретного SHA.

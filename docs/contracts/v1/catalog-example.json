@@ -1,6 +1,6 @@
-{"schema_version":1,"payload_sha256":"482a9a76b5e15ce48622aa1b85152da3a6c65cd50b871ff53e4bdb60f294f03c","payload":{
+{"schema_version":1,"payload_sha256":"470ece8dd40f845161439f98b790014008be34e8f265627d03963234b81edb49","payload":{
   "repository_id": "00000000000000000000000000000064",
-  "sequence": 5,
+  "sequence": 6,
   "records": {
     "00000000000000000000000000000001": {
       "schema_version": 1,
@@ -192,13 +192,32 @@
         ],
         "evidence_source": "caller_reported"
       }
+    },
+    "00000000000000000000000000000006": {
+      "schema_version": 1,
+      "id": "00000000000000000000000000000006",
+      "kind": "dataset",
+      "sequence": 6,
+      "body": {
+        "predecessor_id": "00000000000000000000000000000001",
+        "files": [
+          {
+            "path": "renamed.csv",
+            "object": {
+              "algorithm": "sha256",
+              "digest": "029d219a9e8821f0c9065b679aebde4b483c7eceac78601ebd7bb2f0f66385bd",
+              "size": 13
+            }
+          }
+        ]
+      }
     }
   },
   "references": {
     "data": {
       "target_kind": "dataset",
-      "target_id": "00000000000000000000000000000001",
-      "revision": 2
+      "target_id": "00000000000000000000000000000006",
+      "revision": 3
     },
     "conditions": {
       "target_kind": "snapshot",
@@ -483,6 +502,44 @@
           "target_kind": "dataset",
           "target_id": "00000000000000000000000000000001",
           "revision": 2
+        }
+      }
+    },
+    "000000000000000000000000000003ee": {
+      "command": {
+        "schema_version": 1,
+        "repository_id": "00000000000000000000000000000064",
+        "operation_id": "000000000000000000000000000003ee",
+        "type": "publish_dataset",
+        "body": {
+          "predecessor_id": "00000000000000000000000000000001",
+          "files": [
+            {
+              "path": "renamed.csv",
+              "object": {
+                "algorithm": "sha256",
+                "digest": "029d219a9e8821f0c9065b679aebde4b483c7eceac78601ebd7bb2f0f66385bd",
+                "size": 13
+              }
+            }
+          ]
+        },
+        "ref_update": {
+          "name": "data",
+          "expected_revision": 2
+        }
+      },
+      "result": {
+        "schema_version": 1,
+        "operation_id": "000000000000000000000000000003ee",
+        "record_kind": "dataset",
+        "record_id": "00000000000000000000000000000006",
+        "sequence": 6,
+        "reference": {
+          "name": "data",
+          "target_kind": "dataset",
+          "target_id": "00000000000000000000000000000006",
+          "revision": 3
         }
       }
     }
