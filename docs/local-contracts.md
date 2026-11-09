@@ -109,62 +109,10 @@ object paths; CLI success/error JSON and nonzero failures; no-clobber get.
 Run go test, race detector, go vet and build CLI. CI must run the same checks.
 No power-loss safety claim follows from these tests.
 
-## Metadata slice: decisions to verify before implementation
+## Контракты следующего среза
 
-The object slice can proceed without implementing this section. Before dataset
-publication, review and freeze its JSON schema and commit/failure contract.
-
-- Opaque record and operation IDs: 32 lowercase hex characters generated from
-  16 crypto/rand bytes; IDs are project-scoped and checked for conflicts. No
-  manifest-content hash masquerades as a logical record ID.
-- Caller supplies operation ID. Normalized typed command content is persisted
-  with the result indefinitely in the MVP; retry compares complete normalized
-  content, not merely a hash. Same command returns saved result before checking
-  current reference revision. A reused ID with different content is conflict.
-- One versioned catalog generation includes records, current-reference revisions
-  and operation results. Local interprocess lock protects read/validate/commit;
-  upload proceeds outside the metadata lock. One atomic generation replacement
-  is the visibility point; readers see one committed generation.
-- New named reference expects absence; an update supplies the observed revision.
-  Revisions change on every update, including a return to an old target (ABA).
-  No implicit retry with a new expected revision after conflict.
-- All required local objects and record references are verified before commit.
-  There is no supported deletion during publication. Owner mutation remains
-  detectable external corruption, not an atomicity guarantee.
-- Record, operation result and optional CAS update commit together or not at all.
-  Object upload may leave orphans. A failed CAS creates no visible record/result.
-  Publication without a named-reference update is allowed.
-- Sync staging before replace, then sync directory. Failures after visibility
-  are uncertain outcome; retry/read by operation ID resolves them. Restart never
-  selects a leftover staging generation based on modification time.
-- Versioned catalog envelope includes an integrity checksum of its exact payload
-  bytes; it detects accidental corruption, not malicious owner rewriting.
-  Unsupported versions fail explicitly. Corrupt committed catalog fails closed,
-  with no automatic empty initialization, migration or history rewrite.
-- Paths: nonempty relative slash-separated UTF-8 paths; reject absolute, dot,
-  parent, empty components, backslash, NUL, duplicates and file/directory prefix
-  collisions. Sort entries by path. Materialization must prevent symlink escape.
-
-Tests must cover interrupted publication, first-create CAS race across processes,
-same operation retry/different payload, return-to-old-target revision conflict,
-readers during commit, reopening after process termination, and corrupt catalog.
-Precise filesystem support and limits accompany test evidence before this
-contract is advertised as implemented.
-
-## Later snapshot, run and report schemas
-
-JSON records and reports have explicit schema_version. Unsupported versions are
-errors; old records are not silently normalized into a new meaning. Fixed-size
-IDs and exact object references are validated at boundaries.
-
-Before snapshot/run implementation, define parameter types, canonical request
-normalization, metric definition/units, timestamps and interrupted outcomes.
-The library validates record relationships and finite numeric values. The CLI
-does not infer unknown observations. A completed run is registered once and
-does not serve as a mutable job status row.
-
-Before recovery implementation, freeze a concrete JSON fixture with checked,
-missing, corrupt, unchecked and I/O results, material roles, dependent actions,
-separate stored-material/runtime readiness, and a blocked external dependency.
-Before numerical trials, freeze the pipeline protocol and its applicability.
-No schema or tolerance is implied by starting object-storage work.
+Точная схема каталога, команд, снимков/запусков, API/CLI, ошибок и плана
+восстановления вынесена в [контракты версии 1](contracts-v1.md), включая примеры.
+Они остаются предложением; метаданные пока не реализованы. Первый срез объектов
+выше не меняется. При расхождении для будущих метаданных используется новая
+спецификация, для реализованных объектов - раздел First slice этой страницы.

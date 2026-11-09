@@ -49,8 +49,8 @@ results (R12). A retry of one registration operation returns its saved result,
 not another run (R13). Distinct attempts require distinct operation IDs.
 
 Failure attempts may omit unavailable metrics and outputs. Unknown timestamps
-are not invented. Interrupted-attempt registration needs an explicit terminal
-outcome/evidence rule before its implementation (Q1); no live-job state in core.
+are not invented. The proposed interrupted-attempt outcome/evidence rule is now specified in
+[version 1 contracts](contracts-v1.md); no live-job state in core.
 
 ## Library and CLI operations
 
@@ -130,13 +130,15 @@ portability or numerical reproducibility follows from checksums or a fixed seed.
 
 ## Open questions and decision gates
 
-- Q1: Terminal evidence for an interrupted run; finalize before run registration.
+- Q1: Terminal interrupted-run evidence is proposed in version 1 contracts;
+  verify it in the run implementation slice.
 - Q2: Concrete pipeline/data/model, mandatory materials and metric definitions.
   Selection and pilots precede a frozen evaluation protocol; no invented tolerance.
-- Q3: Exact typed parameter, metric and observed-environment schemas; finalize
-  before snapshot/run slice. All schema versions are checked explicitly.
-- Q4: Metadata-generation durability, corruption detection and uncertain-result
-  handling; review failure tests before advertising publication guarantees.
+- Q3: Typed parameter, metric and observed-environment schemas are proposed in
+  version 1 contracts; verify against the selected pipeline before the run slice.
+- Q4: Local metadata corruption detection and uncertain-result handling are
+  specified in version 1 contracts; failure tests and explicit acceptance remain
+  required before advertising implemented publication guarantees.
 - Q5: Whether an autonomous export bundle is needed; first recovery may use an
   available local store, and cannot claim offline environment installation.
 

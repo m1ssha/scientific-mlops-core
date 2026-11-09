@@ -1,0 +1,490 @@
+{"schema_version":1,"payload_sha256":"482a9a76b5e15ce48622aa1b85152da3a6c65cd50b871ff53e4bdb60f294f03c","payload":{
+  "repository_id": "00000000000000000000000000000064",
+  "sequence": 5,
+  "records": {
+    "00000000000000000000000000000001": {
+      "schema_version": 1,
+      "id": "00000000000000000000000000000001",
+      "kind": "dataset",
+      "sequence": 1,
+      "body": {
+        "predecessor_id": null,
+        "files": [
+          {
+            "path": "data.csv",
+            "object": {
+              "algorithm": "sha256",
+              "digest": "029d219a9e8821f0c9065b679aebde4b483c7eceac78601ebd7bb2f0f66385bd",
+              "size": 13
+            }
+          }
+        ]
+      }
+    },
+    "00000000000000000000000000000002": {
+      "schema_version": 1,
+      "id": "00000000000000000000000000000002",
+      "kind": "snapshot",
+      "sequence": 2,
+      "body": {
+        "predecessor_id": null,
+        "profile_id": "contract-fixture-v1",
+        "inputs": [
+          {
+            "role": "train",
+            "dataset_id": "00000000000000000000000000000001",
+            "target_prefix": "data"
+          }
+        ],
+        "code": {
+          "repository": "https://example.invalid/fixture.git",
+          "commit": "1111111111111111111111111111111111111111",
+          "entry_point": "src/train.py"
+        },
+        "parameters": {
+          "seed": {
+            "type": "integer",
+            "value": 1
+          }
+        },
+        "split": {
+          "description": "Synthetic contract fixture; no evaluation protocol.",
+          "materials": [
+            "split"
+          ]
+        },
+        "environment": {
+          "description": "Synthetic runtime descriptor, not a chosen ML environment.",
+          "materials": [
+            "environment",
+            "package"
+          ],
+          "conditions": {
+            "runtime_family": {
+              "type": "string",
+              "value": "fixture-runtime"
+            }
+          }
+        },
+        "materials": [
+          {
+            "name": "code",
+            "purpose": "code",
+            "required": true,
+            "path": "src/train.py",
+            "source": {
+              "kind": "object",
+              "object": {
+                "algorithm": "sha256",
+                "digest": "2340d3ed2b8b5254e344a01e9ef967fee5c9062e62f11740b2d160fff63652d1",
+                "size": 38
+              }
+            }
+          },
+          {
+            "name": "environment",
+            "purpose": "environment",
+            "required": true,
+            "path": "env.lock",
+            "source": {
+              "kind": "object",
+              "object": {
+                "algorithm": "sha256",
+                "digest": "fed18bebc2a4b68d0a942ea29cb4c4e6b4b96151ac9f1d47f4a21a149168ed16",
+                "size": 16
+              }
+            }
+          },
+          {
+            "name": "package",
+            "purpose": "dependency",
+            "required": true,
+            "path": "packages/fixture-package",
+            "source": {
+              "kind": "external",
+              "locator": "https://example.invalid/fixture-package",
+              "expected_object": null
+            }
+          },
+          {
+            "name": "split",
+            "purpose": "split",
+            "required": true,
+            "path": "split.json",
+            "source": {
+              "kind": "object",
+              "object": {
+                "algorithm": "sha256",
+                "digest": "15ce28bbb2ef064e121f421528db10c4eecd461675242e53f6d2516b9156910f",
+                "size": 24
+              }
+            }
+          }
+        ]
+      }
+    },
+    "00000000000000000000000000000003": {
+      "schema_version": 1,
+      "id": "00000000000000000000000000000003",
+      "kind": "run",
+      "sequence": 3,
+      "body": {
+        "snapshot_id": "00000000000000000000000000000002",
+        "source_run_id": null,
+        "started_at": null,
+        "finished_at": null,
+        "outcome": "succeeded",
+        "reason": null,
+        "observations": {},
+        "metrics": {
+          "processed_rows": {
+            "definition": "contract-fixture:row-count:v1",
+            "unit": "row",
+            "value": 1.0
+          }
+        },
+        "outputs": [
+          {
+            "path": "output.txt",
+            "role": "prediction",
+            "media_type": "text/plain",
+            "object": {
+              "algorithm": "sha256",
+              "digest": "4d3ac42b53378ed2def23b3bf88787f9fffed17b22bd42ce971d7067dc591dab",
+              "size": 15
+            }
+          }
+        ],
+        "evidence_source": "caller_reported"
+      }
+    },
+    "00000000000000000000000000000004": {
+      "schema_version": 1,
+      "id": "00000000000000000000000000000004",
+      "kind": "run",
+      "sequence": 4,
+      "body": {
+        "snapshot_id": "00000000000000000000000000000002",
+        "source_run_id": "00000000000000000000000000000003",
+        "started_at": null,
+        "finished_at": null,
+        "outcome": "succeeded",
+        "reason": null,
+        "observations": {},
+        "metrics": {
+          "processed_rows": {
+            "definition": "contract-fixture:row-count:v1",
+            "unit": "row",
+            "value": 1.0
+          }
+        },
+        "outputs": [
+          {
+            "path": "output.txt",
+            "role": "prediction",
+            "media_type": "text/plain",
+            "object": {
+              "algorithm": "sha256",
+              "digest": "4d3ac42b53378ed2def23b3bf88787f9fffed17b22bd42ce971d7067dc591dab",
+              "size": 15
+            }
+          }
+        ],
+        "evidence_source": "caller_reported"
+      }
+    }
+  },
+  "references": {
+    "data": {
+      "target_kind": "dataset",
+      "target_id": "00000000000000000000000000000001",
+      "revision": 2
+    },
+    "conditions": {
+      "target_kind": "snapshot",
+      "target_id": "00000000000000000000000000000002",
+      "revision": 1
+    }
+  },
+  "operations": {
+    "000000000000000000000000000003e9": {
+      "command": {
+        "schema_version": 1,
+        "repository_id": "00000000000000000000000000000064",
+        "operation_id": "000000000000000000000000000003e9",
+        "type": "publish_dataset",
+        "body": {
+          "predecessor_id": null,
+          "files": [
+            {
+              "path": "data.csv",
+              "object": {
+                "algorithm": "sha256",
+                "digest": "029d219a9e8821f0c9065b679aebde4b483c7eceac78601ebd7bb2f0f66385bd",
+                "size": 13
+              }
+            }
+          ]
+        },
+        "ref_update": {
+          "name": "data",
+          "expected_revision": 0
+        }
+      },
+      "result": {
+        "schema_version": 1,
+        "operation_id": "000000000000000000000000000003e9",
+        "record_kind": "dataset",
+        "record_id": "00000000000000000000000000000001",
+        "sequence": 1,
+        "reference": {
+          "name": "data",
+          "target_kind": "dataset",
+          "target_id": "00000000000000000000000000000001",
+          "revision": 1
+        }
+      }
+    },
+    "000000000000000000000000000003ea": {
+      "command": {
+        "schema_version": 1,
+        "repository_id": "00000000000000000000000000000064",
+        "operation_id": "000000000000000000000000000003ea",
+        "type": "save_snapshot",
+        "body": {
+          "predecessor_id": null,
+          "profile_id": "contract-fixture-v1",
+          "inputs": [
+            {
+              "role": "train",
+              "dataset_id": "00000000000000000000000000000001",
+              "target_prefix": "data"
+            }
+          ],
+          "code": {
+            "repository": "https://example.invalid/fixture.git",
+            "commit": "1111111111111111111111111111111111111111",
+            "entry_point": "src/train.py"
+          },
+          "parameters": {
+            "seed": {
+              "type": "integer",
+              "value": 1
+            }
+          },
+          "split": {
+            "description": "Synthetic contract fixture; no evaluation protocol.",
+            "materials": [
+              "split"
+            ]
+          },
+          "environment": {
+            "description": "Synthetic runtime descriptor, not a chosen ML environment.",
+            "materials": [
+              "environment",
+              "package"
+            ],
+            "conditions": {
+              "runtime_family": {
+                "type": "string",
+                "value": "fixture-runtime"
+              }
+            }
+          },
+          "materials": [
+            {
+              "name": "code",
+              "purpose": "code",
+              "required": true,
+              "path": "src/train.py",
+              "source": {
+                "kind": "object",
+                "object": {
+                  "algorithm": "sha256",
+                  "digest": "2340d3ed2b8b5254e344a01e9ef967fee5c9062e62f11740b2d160fff63652d1",
+                  "size": 38
+                }
+              }
+            },
+            {
+              "name": "environment",
+              "purpose": "environment",
+              "required": true,
+              "path": "env.lock",
+              "source": {
+                "kind": "object",
+                "object": {
+                  "algorithm": "sha256",
+                  "digest": "fed18bebc2a4b68d0a942ea29cb4c4e6b4b96151ac9f1d47f4a21a149168ed16",
+                  "size": 16
+                }
+              }
+            },
+            {
+              "name": "package",
+              "purpose": "dependency",
+              "required": true,
+              "path": "packages/fixture-package",
+              "source": {
+                "kind": "external",
+                "locator": "https://example.invalid/fixture-package",
+                "expected_object": null
+              }
+            },
+            {
+              "name": "split",
+              "purpose": "split",
+              "required": true,
+              "path": "split.json",
+              "source": {
+                "kind": "object",
+                "object": {
+                  "algorithm": "sha256",
+                  "digest": "15ce28bbb2ef064e121f421528db10c4eecd461675242e53f6d2516b9156910f",
+                  "size": 24
+                }
+              }
+            }
+          ]
+        },
+        "ref_update": {
+          "name": "conditions",
+          "expected_revision": 0
+        }
+      },
+      "result": {
+        "schema_version": 1,
+        "operation_id": "000000000000000000000000000003ea",
+        "record_kind": "snapshot",
+        "record_id": "00000000000000000000000000000002",
+        "sequence": 2,
+        "reference": {
+          "name": "conditions",
+          "target_kind": "snapshot",
+          "target_id": "00000000000000000000000000000002",
+          "revision": 1
+        }
+      }
+    },
+    "000000000000000000000000000003eb": {
+      "command": {
+        "schema_version": 1,
+        "repository_id": "00000000000000000000000000000064",
+        "operation_id": "000000000000000000000000000003eb",
+        "type": "register_run",
+        "body": {
+          "snapshot_id": "00000000000000000000000000000002",
+          "source_run_id": null,
+          "started_at": null,
+          "finished_at": null,
+          "outcome": "succeeded",
+          "reason": null,
+          "observations": {},
+          "metrics": {
+            "processed_rows": {
+              "definition": "contract-fixture:row-count:v1",
+              "unit": "row",
+              "value": 1.0
+            }
+          },
+          "outputs": [
+            {
+              "path": "output.txt",
+              "role": "prediction",
+              "media_type": "text/plain",
+              "object": {
+                "algorithm": "sha256",
+                "digest": "4d3ac42b53378ed2def23b3bf88787f9fffed17b22bd42ce971d7067dc591dab",
+                "size": 15
+              }
+            }
+          ],
+          "evidence_source": "caller_reported"
+        },
+        "ref_update": null
+      },
+      "result": {
+        "schema_version": 1,
+        "operation_id": "000000000000000000000000000003eb",
+        "record_kind": "run",
+        "record_id": "00000000000000000000000000000003",
+        "sequence": 3,
+        "reference": null
+      }
+    },
+    "000000000000000000000000000003ec": {
+      "command": {
+        "schema_version": 1,
+        "repository_id": "00000000000000000000000000000064",
+        "operation_id": "000000000000000000000000000003ec",
+        "type": "register_run",
+        "body": {
+          "snapshot_id": "00000000000000000000000000000002",
+          "source_run_id": "00000000000000000000000000000003",
+          "started_at": null,
+          "finished_at": null,
+          "outcome": "succeeded",
+          "reason": null,
+          "observations": {},
+          "metrics": {
+            "processed_rows": {
+              "definition": "contract-fixture:row-count:v1",
+              "unit": "row",
+              "value": 1.0
+            }
+          },
+          "outputs": [
+            {
+              "path": "output.txt",
+              "role": "prediction",
+              "media_type": "text/plain",
+              "object": {
+                "algorithm": "sha256",
+                "digest": "4d3ac42b53378ed2def23b3bf88787f9fffed17b22bd42ce971d7067dc591dab",
+                "size": 15
+              }
+            }
+          ],
+          "evidence_source": "caller_reported"
+        },
+        "ref_update": null
+      },
+      "result": {
+        "schema_version": 1,
+        "operation_id": "000000000000000000000000000003ec",
+        "record_kind": "run",
+        "record_id": "00000000000000000000000000000004",
+        "sequence": 4,
+        "reference": null
+      }
+    },
+    "000000000000000000000000000003ed": {
+      "command": {
+        "schema_version": 1,
+        "repository_id": "00000000000000000000000000000064",
+        "operation_id": "000000000000000000000000000003ed",
+        "type": "set_reference",
+        "body": {
+          "name": "data",
+          "target_kind": "dataset",
+          "target_id": "00000000000000000000000000000001",
+          "expected_revision": 1
+        },
+        "ref_update": null
+      },
+      "result": {
+        "schema_version": 1,
+        "operation_id": "000000000000000000000000000003ed",
+        "record_kind": null,
+        "record_id": null,
+        "sequence": 5,
+        "reference": {
+          "name": "data",
+          "target_kind": "dataset",
+          "target_id": "00000000000000000000000000000001",
+          "revision": 2
+        }
+      }
+    }
+  }
+}}
