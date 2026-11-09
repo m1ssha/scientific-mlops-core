@@ -59,6 +59,9 @@ class WineTests(unittest.TestCase):
         self.assertEqual(p.read(self.base / 'changed/result.json')['status'], 'failed')
 
     def test_protocol_and_phase(self):
+        draft = p.read(self.root / 'protocol.json')
+        draft.update(status='draft', freeze=None)
+        p.write(self.root / 'protocol.json', draft); self.remanifest()
         with self.assertRaises(ValueError): p.run(self.root, self.base / 'main', 'main')
         self.assertEqual(p.read(self.base / 'main/result.json')['status'], 'failed')
         (self.root / 'protocol.json').write_text('not json')
