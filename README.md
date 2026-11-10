@@ -140,3 +140,5 @@ Go API записи изменился: поле `Record.Body` теперь со
 - [Дизайн Wine-эксперимента](docs/wine-experiment-design.md) и [результаты с независимым ревью](examples/wine/evidence/REPORT.md). Локальные повторы не подтверждают переносимость или обобщающую способность модели.
 
 [Scientific MLOps Platform](https://github.com/m1ssha/scientific-mlops-platform) - отдельный проект пользовательского интерфейса и API поверх ядра; его реализация отложена.
+
+Исходный запуск Wine можно импортировать в каталог внешним мостом: см. [инструкцию](examples/wine_catalog/README.md).
