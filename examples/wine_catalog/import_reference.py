@@ -2,12 +2,12 @@
 """Import the existing Wine reference into a local smlops catalog; no training."""
 import argparse
 import hashlib
-import importlib.util
 import json
 import re
 import subprocess
 import sys
 import tempfile
+import types
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -52,45 +52,74 @@ def utc(value):
 
 
 def preflight(root, reference, wheels):
+    # Capture and hash a coherent bundle before executing any Wine code.
+    pinned_bytes = {name: (root / name).read_bytes() for name in PINNED}
     for name, expected in PINNED.items():
-        if digest(root / name) != expected:
+        if hashlib.sha256(pinned_bytes[name]).hexdigest() != expected:
             raise ValueError('unsupported Wine v1 source')
-    if digest(reference / 'result.json') != REFERENCE_RECORD_SHA256:
+    record_bytes = (reference / 'result.json').read_bytes()
+    if hashlib.sha256(record_bytes).hexdigest() != REFERENCE_RECORD_SHA256:
         raise ValueError('unsupported reference record')
-    protocol = json.loads((root / 'protocol.json').read_text())
+    manifest = json.loads(pinned_bytes['manifest.json'])
+    record = json.loads(record_bytes)
+    protocol = json.loads(pinned_bytes['protocol.json'])
     if protocol.get('freeze', {}).get('code_revision') != REVISION:
         raise ValueError('unexpected frozen revision')
     bundle_manifest = subprocess.run(['git', '-C', str(PROJECT), 'show', f'{BUNDLE_REVISION}:examples/wine/manifest.json'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout
-    if bundle_manifest != (root / 'manifest.json').read_bytes():
+    if bundle_manifest != pinned_bytes['manifest.json']:
         raise ValueError('manifest differs from bundle revision')
     for name in ('pipeline.py', 'prepare_split.py'):
         original = subprocess.run(['git', '-C', str(PROJECT), 'show', f'{REVISION}:examples/wine/{name}'], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).stdout
-        if original != (root / name).read_bytes():
+        if original != pinned_bytes[name]:
             raise ValueError('frozen code differs from git revision')
-    sys.dont_write_bytecode = True
-    spec = importlib.util.spec_from_file_location('trusted_wine_pipeline', root / 'pipeline.py')
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    rows, split, config = module.verify(root)
-    if (root / 'manifest.json').read_bytes() != (reference.parent / 'input-manifest.json').read_bytes():
+    bundle = {}
+    for name, expected in manifest['files'].items():
+        data = pinned_bytes[name] if name in pinned_bytes else (root / name).read_bytes()
+        if hashlib.sha256(data).hexdigest() != expected:
+            raise ValueError('bundle file differs from manifest')
+        bundle[name] = data
+    if (reference.parent / 'input-manifest.json').read_bytes() != pinned_bytes['manifest.json']:
         raise ValueError('reference input manifest mismatch')
-    _, metrics, env, _ = module.validate_output(root, reference, rows, split)
-    record = module.read(reference / 'result.json')
-    if record['phase'] != 'main':
-        raise ValueError('reference is not a main run')
-    locked = re.findall(r'--hash=sha256:([0-9a-f]{64})', (root / 'requirements.lock').read_text())
-    if len(locked) != 7 or len(set(locked)) != 7:
-        raise ValueError('invalid wheel lock')
-    wheel_files = {}
-    if wheels is not None:
-        module.wheelhouse(root, wheels)
-        paths = sorted(wheels.glob('*.whl'))
-        if len(paths) != 7:
-            raise ValueError('wheelhouse must contain exactly seven wheels')
-        wheel_files = {digest(p): p for p in paths}
-        if set(wheel_files) != set(locked):
-            raise ValueError('wheelhouse does not match lock')
-    return module, split, config, env, metrics, record, locked, wheel_files
+    output_bytes = {'result.json': record_bytes}
+    for name, expected in record['outputs'].items():
+        data = (reference / name).read_bytes()
+        if hashlib.sha256(data).hexdigest() != expected:
+            raise ValueError('reference output hash mismatch')
+        output_bytes[name] = data
+    if set(output_bytes) != set(OUTPUTS):
+        raise ValueError('unexpected reference outputs')
+    with tempfile.TemporaryDirectory(prefix='wine-verified-') as temp:
+        staged = Path(temp) / 'wine'
+        out = Path(temp) / 'reference'
+        out.mkdir()
+        for name, data in {**bundle, 'manifest.json': pinned_bytes['manifest.json']}.items():
+            path = staged / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(data)
+        for name, data in output_bytes.items():
+            (out / name).write_bytes(data)
+        module = types.ModuleType('trusted_wine_pipeline')
+        module.__file__ = str(staged / 'pipeline.py')
+        exec(compile(bundle['pipeline.py'], module.__file__, 'exec'), module.__dict__)
+        rows, split, config = module.verify(staged)
+        _, metrics, env, _ = module.validate_output(staged, out, rows, split)
+        if record['phase'] != 'main':
+            raise ValueError('reference is not a main run')
+        locked = re.findall(r'--hash=sha256:([0-9a-f]{64})', bundle['requirements.lock'].decode())
+        if len(locked) != 7 or len(set(locked)) != 7:
+            raise ValueError('invalid wheel lock')
+        wheel_files = {}
+        if wheels is not None:
+            module.wheelhouse(staged, wheels)
+            paths = sorted(wheels.glob('*.whl'))
+            if len(paths) != 7:
+                raise ValueError('wheelhouse must contain exactly seven wheels')
+            wheel_files = {digest(p): (p, p.stat().st_size) for p in paths}
+            if set(wheel_files) != set(locked):
+                raise ValueError('wheelhouse does not match lock')
+    bundle_plan = {name: (manifest['files'][name], len(data)) for name, data in bundle.items()}
+    output_plan = {name: (REFERENCE_RECORD_SHA256 if name == 'result.json' else record['outputs'][name], len(data)) for name, data in output_bytes.items()}
+    return split, config, env, metrics, record, locked, wheel_files, bundle_plan, output_plan, len(pinned_bytes['manifest.json'])
 
 
 class CLI:
@@ -109,8 +138,8 @@ class CLI:
             raise ValueError('smlops failed: ' + code)
         return json.loads(proc.stdout)
 
-    def put(self, path):
-        ref = {'algorithm': 'sha256', 'digest': digest(path), 'size': path.stat().st_size}
+    def put(self, path, expected, size):
+        ref = {'algorithm': 'sha256', 'digest': expected, 'size': size}
         self.call('object', 'put', '--store', str(self.store), '--file', str(path), '--sha256', ref['digest'], '--size', str(ref['size']))
         return ref
 
@@ -128,25 +157,24 @@ class CLI:
 def import_reference(binary, store, repo, root, reference, wheels):
     if not re.fullmatch(r'[0-9a-f]{32}', repo):
         raise ValueError('repository ID must contain 32 lowercase hexadecimal digits')
-    module, split, config, env, metrics, record, locked, wheel_files = preflight(root, reference, wheels)
+    split, config, env, metrics, record, locked, wheel_files, bundle_plan, output_plan, manifest_size = preflight(root, reference, wheels)
     cli = CLI(binary, store, repo)
     existing = cli.call('repository', 'show', '--store', str(store), allow_not_initialized=True)
     if existing is None:
         cli.call('repository', 'init', '--store', str(store), '--repository-id', repo)
     elif existing['repository_id'] != repo:
         raise ValueError('repository ID mismatch')
-    manifest = module.read(root / 'manifest.json')
-    refs = {name: cli.put(root / name) for name in sorted(manifest['files'])}
-    manifest_ref = cli.put(root / 'manifest.json')
-    output_refs = {name: cli.put(reference / name) for name in OUTPUTS}
-    wheel_refs = {h: cli.put(p) for h, p in sorted(wheel_files.items())}
+    refs = {name: cli.put(root / name, *bundle_plan[name]) for name in sorted(bundle_plan)}
+    manifest_ref = cli.put(root / 'manifest.json', PINNED['manifest.json'], manifest_size)
+    output_refs = {name: cli.put(reference / name, *output_plan[name]) for name in OUTPUTS}
+    wheel_refs = {h: cli.put(p, h, size) for h, (p, size) in sorted(wheel_files.items())}
     dataset = cli.command(('dataset', 'publish'), 'publish_dataset', {'predecessor_id': None, 'files': [{'path': 'wine.data', 'object': refs['data/wine.data']}]})
     materials = []
     def material(name, purpose, path, source):
         materials.append({'name': name, 'purpose': purpose, 'required': True, 'path': path, 'source': source})
     def source(ref):
         return {'kind': 'object', 'object': ref}
-    for name in sorted(manifest['files']):
+    for name in sorted(bundle_plan):
         if name == 'data/wine.data':
             continue
         purpose = ('code' if name in ('pipeline.py', 'prepare_split.py', 'test_pipeline.py') else
@@ -156,7 +184,7 @@ def import_reference(binary, store, repo, root, reference, wheels):
     material('reference-environment', 'environment', 'wine/reference/environment.json', source(output_refs['environment.json']))
     for h in sorted(locked):
         if h in wheel_refs:
-            filename = wheel_files[h].name
+            filename = wheel_files[h][0].name
             src = source(wheel_refs[h])
         else:
             filename = h + '.whl'
@@ -165,7 +193,7 @@ def import_reference(binary, store, repo, root, reference, wheels):
     conditions = {k: typed(v) for k, v in sorted(env.items())}
     parameters = {'config.' + k: typed(v) for k, v in sorted(config.items())}
     parameters['split.seed'] = typed(split['strategy']['seed'])
-    snapshot_body = {'predecessor_id': None, 'profile_id': 'wine-v1:sha256:' + digest(root / 'protocol.json'),
+    snapshot_body = {'predecessor_id': None, 'profile_id': 'wine-v1:sha256:' + PINNED['protocol.json'],
         'inputs': [{'role': 'data', 'dataset_id': dataset['record_id'], 'target_prefix': 'wine/data'}],
         'code': {'repository': REPOSITORY, 'commit': REVISION, 'entry_point': 'wine/pipeline.py'},
         'parameters': parameters, 'split': {'description': 'Wine v1 saved stratified split', 'materials': ['split.json']},

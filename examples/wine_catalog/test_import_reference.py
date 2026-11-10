@@ -1,4 +1,6 @@
 import json
+import importlib.util
+import py_compile
 import os
 import shutil
 import subprocess
@@ -120,6 +122,66 @@ class ImportTests(unittest.TestCase):
         self.assertEqual(result['snapshot']['sequence'], 2)
         self.assertEqual(result['run']['sequence'], 3)
         self.assertEqual(self.cli('repository', 'show', '--store', str(self.store))['sequence'], 3)
+
+    def test_bytecode_cache_does_not_replace_verified_source(self):
+        source = self.root / 'pipeline.py'
+        original = source.read_bytes()
+        substitute = b"CACHE_TEST_MARKER = 'benign cached module'\n"
+        source.write_bytes(substitute + b'#' * (len(original) - len(substitute)))
+        stat = source.stat()
+        cache = Path(importlib.util.cache_from_source(str(source)))
+        py_compile.compile(str(source), cfile=str(cache), doraise=True)
+        source.write_bytes(original)
+        os.utime(source, ns=(stat.st_atime_ns, stat.st_mtime_ns))
+        # Confirm that the standard timestamp-based loader would use this cache.
+        check = subprocess.run([sys.executable, '-c',
+            "import importlib.util,sys; s=importlib.util.spec_from_file_location('example',sys.argv[1]); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); print(m.CACHE_TEST_MARKER)",
+            str(source)], capture_output=True, text=True, check=True)
+        self.assertEqual(check.stdout.strip(), 'benign cached module')
+        result = self.run_import()
+        self.assertEqual(result['run']['sequence'], 3)
+
+    def test_drift_between_preflight_and_object_put(self):
+        cases = ['bundle', 'manifest', 'output']
+        if os.environ.get('WINE_WHEELHOUSE'):
+            cases.append('wheel')
+        for case in cases:
+            with self.subTest(case=case):
+                trial = self.dir / case
+                trial.mkdir()
+                root = trial / 'wine'
+                shutil.copytree(WINE, root)
+                store = trial / 'store'
+                store.mkdir()
+                extra = []
+                if case == 'wheel':
+                    wheelhouse = trial / 'wheels'
+                    shutil.copytree(os.environ['WINE_WHEELHOUSE'], wheelhouse)
+                    target = next(wheelhouse.glob('*.whl'))
+                    extra = ['--wheelhouse', str(wheelhouse)]
+                else:
+                    targets = {'bundle': root / 'config.json', 'manifest': root / 'manifest.json',
+                               'output': root / 'evidence/main-v1/reference/result/metrics.json'}
+                    target = targets[case]
+                wrapper = trial / 'drift-cli'
+                marker = trial / 'modified'
+                wrapper.write_text(
+                    '#!' + sys.executable + '\n'
+                    'import os, sys\n'
+                    'from pathlib import Path\n'
+                    'p=Path(' + repr(str(target)) + '); marker=Path(' + repr(str(marker)) + ')\n'
+                    'if sys.argv[1:3] == ["object", "put"] and not marker.exists():\n'
+                    '    data=p.read_bytes(); p.write_bytes(bytes([data[0] ^ 1]) + data[1:]); marker.touch()\n'
+                    'os.execv(' + repr(str(self.bin)) + ', [' + repr(str(self.bin)) + '] + sys.argv[1:])\n'
+                )
+                wrapper.chmod(0o700)
+                cmd = [sys.executable, str(SCRIPT), '--smlops', str(wrapper), '--store', str(store), '--repository-id', REPO, '--wine-root', str(root), *extra]
+                result = subprocess.run(cmd, capture_output=True, text=True)
+                self.assertNotEqual(result.returncode, 0, result.stdout)
+                self.assertEqual(result.stdout, '')
+                self.assertTrue(marker.exists())
+                state = self.cli('repository', 'show', '--store', str(store))
+                self.assertEqual(state['sequence'], 0)
 
     def test_reject_corrupt_input(self):
         (self.root / 'data/wine.data').write_text('corrupt')
