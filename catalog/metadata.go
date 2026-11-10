@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"os"
 	"path/filepath"
 	"sort"
@@ -287,19 +288,22 @@ func decodeGeneration(b []byte) (generation, error) {
 		if rr.SchemaVersion != 1 {
 			return z, ErrUnsupportedSchema
 		}
-		if rr.Kind != Dataset {
+		typ := map[RecordKind]string{Dataset: "publish_dataset", Snapshot: "save_snapshot", Run: "register_run"}[rr.Kind]
+		if typ == "" {
 			return z, ErrUnsupportedKind
 		}
-		command := fmt.Sprintf(`{"schema_version":1,"repository_id":"%s","operation_id":"00000000000000000000000000000000","type":"publish_dataset","body":%s,"ref_update":null}`, raw.Repository, rr.Body)
+		command := fmt.Sprintf(`{"schema_version":1,"repository_id":"%s","operation_id":"00000000000000000000000000000000","type":"%s","body":%s,"ref_update":null}`, raw.Repository, typ, rr.Body)
 		c, e := DecodeCommand([]byte(command))
 		if e != nil {
 			return z, ErrIntegrity
 		}
-		var original DatasetBody
-		if e = json.Unmarshal(rr.Body, &original); e != nil || !sameBody(original, c.Body.(DatasetBody)) {
+		original, _ := json.Marshal(c.Body)
+		var rawNormalized any
+		var encodedNormalized any
+		if decodeNumber(rr.Body, &rawNormalized) != nil || decodeNumber(original, &encodedNormalized) != nil || !equalJSON(rawNormalized, encodedNormalized) {
 			return z, ErrIntegrity
 		}
-		g.Records[id] = Record{rr.SchemaVersion, rr.ID, rr.Kind, rr.Sequence, c.Body.(DatasetBody)}
+		g.Records[id] = Record{rr.SchemaVersion, rr.ID, rr.Kind, rr.Sequence, c.Body}
 	}
 	for name, b := range raw.References {
 		var r Reference
@@ -332,7 +336,7 @@ func decodeGeneration(b []byte) (generation, error) {
 		if e := json.Unmarshal(o.Command, &kindProbe); e != nil {
 			return z, ErrIntegrity
 		}
-		if kindProbe.Type != "publish_dataset" && kindProbe.Type != "set_reference" {
+		if kindProbe.Type != "publish_dataset" && kindProbe.Type != "save_snapshot" && kindProbe.Type != "register_run" && kindProbe.Type != "set_reference" {
 			return z, ErrUnsupportedKind
 		}
 		c, e := DecodeCommand(o.Command)
@@ -357,14 +361,18 @@ func decodeGeneration(b []byte) (generation, error) {
 				return z, ErrIntegrity
 			}
 		}
-		if c.Type == "publish_dataset" {
-			var original struct {
-				Body DatasetBody `json:"body"`
-			}
-			if e = json.Unmarshal(o.Command, &original); e != nil || !sameBody(original.Body, c.Body.(DatasetBody)) {
-				return z, ErrIntegrity
-			}
+		var original struct {
+			Body json.RawMessage `json:"body"`
 		}
+		if json.Unmarshal(o.Command, &original) != nil {
+			return z, ErrIntegrity
+		}
+		bodyJSON, _ := json.Marshal(c.Body)
+		var rawBody, normalizedBody any
+		if decodeNumber(original.Body, &rawBody) != nil || decodeNumber(bodyJSON, &normalizedBody) != nil || !equalJSON(rawBody, normalizedBody) {
+			return z, ErrIntegrity
+		}
+
 		g.Operations[id] = Operation{c, r}
 	}
 	if e := validateGeneration(g); e != nil {
@@ -401,31 +409,46 @@ func validateGeneration(g generation) error {
 		var target ID
 		var update bool
 		switch o.Command.Type {
-		case "publish_dataset":
-			if r.RecordID == nil || r.RecordKind == nil || *r.RecordKind != Dataset {
+		case "publish_dataset", "save_snapshot", "register_run":
+			kind = map[string]RecordKind{"publish_dataset": Dataset, "save_snapshot": Snapshot, "register_run": Run}[o.Command.Type]
+			if r.RecordID == nil || r.RecordKind == nil || *r.RecordKind != kind {
 				return ErrIntegrity
 			}
 			record, ok := g.Records[*r.RecordID]
-			if !ok || !validID(record.ID) || record.ID != *r.RecordID || record.SchemaVersion != 1 || record.Kind != Dataset || record.Sequence != r.Sequence || !sameBody(record.Body, o.Command.Body.(DatasetBody)) {
+			if !ok || !validID(record.ID) || record.ID != *r.RecordID || record.SchemaVersion != 1 || record.Kind != kind || record.Sequence != r.Sequence || !sameBody(record.Body, o.Command.Body) {
 				return ErrIntegrity
 			}
 			if _, ok = records[record.ID]; ok {
 				return ErrIntegrity
 			}
-			if record.Body.PredecessorID != nil {
-				p, ok := records[*record.Body.PredecessorID]
-				if !ok || p.Kind != Dataset {
+			partial := snapshot{generation{Records: records}}
+			switch b := record.Body.(type) {
+			case DatasetBody:
+				if b.PredecessorID != nil {
+					p, ok := records[*b.PredecessorID]
+					if !ok || p.Kind != Dataset {
+						return ErrIntegrity
+					}
+				}
+			case SnapshotBody:
+				if checkSnapshotRefs(partial, b) != nil {
 					return ErrIntegrity
 				}
+			case RunBody:
+				if checkRunRefs(partial, b) != nil {
+					return ErrIntegrity
+				}
+			default:
+				return ErrIntegrity
 			}
 			records[record.ID] = record
 			target = record.ID
-			kind = Dataset
 			if o.Command.RefUpdate != nil {
 				update = true
 				name = o.Command.RefUpdate.Name
 				expected = o.Command.RefUpdate.ExpectedRevision
 			}
+
 		case "set_reference":
 			if r.RecordID != nil || r.RecordKind != nil {
 				return ErrIntegrity
@@ -436,7 +459,7 @@ func validateGeneration(g generation) error {
 			target = b.TargetID
 			kind = b.TargetKind
 			update = true
-			if _, ok := records[target]; !ok {
+			if existing, ok := records[target]; !ok || existing.Kind != kind {
 				return ErrIntegrity
 			}
 		default:
@@ -467,8 +490,52 @@ func validateGeneration(g generation) error {
 	}
 	return nil
 }
-func sameBody(a, b DatasetBody) bool {
+func sameBody(a, b any) bool {
 	aa, _ := json.Marshal(a)
 	bb, _ := json.Marshal(b)
 	return bytes.Equal(aa, bb)
+}
+
+func decodeNumber(data []byte, v any) error {
+	d := json.NewDecoder(bytes.NewReader(data))
+	d.UseNumber()
+	return d.Decode(v)
+}
+
+func equalJSON(a, b any) bool {
+	switch x := a.(type) {
+	case json.Number:
+		y, ok := b.(json.Number)
+		if !ok {
+			return false
+		}
+		xr, xok := new(big.Rat).SetString(string(x))
+		yr, yok := new(big.Rat).SetString(string(y))
+		return xok && yok && xr.Cmp(yr) == 0
+	case map[string]any:
+		y, ok := b.(map[string]any)
+		if !ok || len(x) != len(y) {
+			return false
+		}
+		for k, v := range x {
+			w, ok := y[k]
+			if !ok || !equalJSON(v, w) {
+				return false
+			}
+		}
+		return true
+	case []any:
+		y, ok := b.([]any)
+		if !ok || len(x) != len(y) {
+			return false
+		}
+		for i := range x {
+			if !equalJSON(x[i], y[i]) {
+				return false
+			}
+		}
+		return true
+	default:
+		return a == b
+	}
 }

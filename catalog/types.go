@@ -8,6 +8,7 @@ import (
 )
 
 var (
+	ErrConditionMismatch = errors.New("condition mismatch")
 	ErrInvalidInput      = errors.New("invalid input")
 	ErrNotInitialized    = errors.New("repository not initialized")
 	ErrNotFound          = errors.New("not found")
@@ -72,11 +73,11 @@ type Receipt struct {
 	Reference     *ReferenceResult `json:"reference"`
 }
 type Record struct {
-	SchemaVersion int         `json:"schema_version"`
-	ID            ID          `json:"id"`
-	Kind          RecordKind  `json:"kind"`
-	Sequence      int64       `json:"sequence"`
-	Body          DatasetBody `json:"body"`
+	SchemaVersion int        `json:"schema_version"`
+	ID            ID         `json:"id"`
+	Kind          RecordKind `json:"kind"`
+	Sequence      int64      `json:"sequence"`
+	Body          any        `json:"body"`
 }
 type Operation struct {
 	Command Command `json:"command"`
@@ -115,4 +116,86 @@ type Tx interface {
 type MetadataStore interface {
 	Read(context.Context) (View, error)
 	Update(context.Context, func(Tx) error) error
+}
+
+const (
+	Snapshot RecordKind = "snapshot"
+	Run      RecordKind = "run"
+)
+
+// TypedValue has one of the tags integer, number, string, boolean or null.
+// Value must be respectively int64, float64, string, bool or nil.
+type TypedValue struct {
+	Type  string `json:"type"`
+	Value any    `json:"-"`
+}
+type SnapshotInput struct {
+	Role         string `json:"role"`
+	DatasetID    ID     `json:"dataset_id"`
+	TargetPrefix string `json:"target_prefix"`
+}
+type Code struct {
+	Repository string `json:"repository"`
+	Commit     string `json:"commit"`
+	EntryPoint string `json:"entry_point"`
+}
+type MaterialSource struct {
+	Kind           string      `json:"kind"`
+	Object         *object.Ref `json:"object,omitempty"`
+	Locator        string      `json:"locator,omitempty"`
+	ExpectedObject *object.Ref `json:"-"`
+}
+type Material struct {
+	Name     string         `json:"name"`
+	Purpose  string         `json:"purpose"`
+	Required bool           `json:"required"`
+	Path     string         `json:"path"`
+	Source   MaterialSource `json:"source"`
+}
+type Split struct {
+	Description string   `json:"description"`
+	Materials   []string `json:"materials"`
+}
+type Environment struct {
+	Description string                `json:"description"`
+	Materials   []string              `json:"materials"`
+	Conditions  map[string]TypedValue `json:"conditions"`
+}
+type SnapshotBody struct {
+	PredecessorID *ID                   `json:"predecessor_id"`
+	ProfileID     string                `json:"profile_id"`
+	Inputs        []SnapshotInput       `json:"inputs"`
+	Code          Code                  `json:"code"`
+	Parameters    map[string]TypedValue `json:"parameters"`
+	Split         Split                 `json:"split"`
+	Environment   Environment           `json:"environment"`
+	Materials     []Material            `json:"materials"`
+}
+type Observation struct {
+	Status   string      `json:"status"`
+	Value    *TypedValue `json:"value"`
+	Evidence *string     `json:"evidence"`
+}
+type Metric struct {
+	Definition string  `json:"definition"`
+	Unit       string  `json:"unit"`
+	Value      float64 `json:"value"`
+}
+type Output struct {
+	Path      string     `json:"path"`
+	Role      string     `json:"role"`
+	MediaType string     `json:"media_type"`
+	Object    object.Ref `json:"object"`
+}
+type RunBody struct {
+	SnapshotID     ID                     `json:"snapshot_id"`
+	SourceRunID    *ID                    `json:"source_run_id"`
+	StartedAt      *string                `json:"started_at"`
+	FinishedAt     *string                `json:"finished_at"`
+	Outcome        string                 `json:"outcome"`
+	Reason         *string                `json:"reason"`
+	Observations   map[string]Observation `json:"observations"`
+	Metrics        map[string]Metric      `json:"metrics"`
+	Outputs        []Output               `json:"outputs"`
+	EvidenceSource string                 `json:"evidence_source"`
 }

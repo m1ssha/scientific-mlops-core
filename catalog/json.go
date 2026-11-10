@@ -152,6 +152,18 @@ func DecodeCommand(data []byte) (Command, error) {
 			body.Files = append(body.Files, item)
 		}
 		c.Body = body
+	case "save_snapshot":
+		var b SnapshotBody
+		if e := strictDecode(envelope.Body, &b); e != nil {
+			return c, fmt.Errorf("%w: %v", ErrInvalidInput, e)
+		}
+		c.Body = b
+	case "register_run":
+		var b RunBody
+		if e := strictDecode(envelope.Body, &b); e != nil {
+			return c, fmt.Errorf("%w: %v", ErrInvalidInput, e)
+		}
+		c.Body = b
 	case "set_reference":
 		var b SetReferenceBody
 		if e := decodeExact(envelope.Body, &b, "name", "target_kind", "target_id", "expected_revision"); e != nil {

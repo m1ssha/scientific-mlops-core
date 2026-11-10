@@ -35,6 +35,8 @@ func classify(err error) string {
 		return "cancelled"
 	case errors.Is(err, context.DeadlineExceeded):
 		return "deadline"
+	case errors.Is(err, catalog.ErrConditionMismatch):
+		return "condition_mismatch"
 	case errors.Is(err, catalog.ErrInvalidInput), errors.Is(err, object.ErrInvalidRef):
 		return "invalid_input"
 	case errors.Is(err, catalog.ErrNotInitialized):

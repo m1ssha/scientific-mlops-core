@@ -55,7 +55,7 @@ func runCatalog(args []string) int {
 		return fail("invalid_input", errors.New("expected catalog command"))
 	}
 	kind, action := args[0], args[1]
-	valid := kind == "repository" && (action == "init" || action == "show") || kind == "dataset" && (action == "publish" || action == "show" || action == "list") || kind == "ref" && (action == "show" || action == "set") || kind == "operation" && action == "show"
+	valid := kind == "repository" && (action == "init" || action == "show") || kind == "dataset" && (action == "publish" || action == "show" || action == "list") || kind == "snapshot" && (action == "create" || action == "show" || action == "list") || kind == "run" && (action == "register" || action == "show" || action == "list") || kind == "ref" && (action == "show" || action == "set") || kind == "operation" && action == "show"
 	if !valid {
 		return fail("invalid_input", errors.New("unknown catalog command"))
 	}
@@ -66,13 +66,13 @@ func runCatalog(args []string) int {
 	if kind == "repository" && action == "init" {
 		id = fs.String("repository-id", "", "")
 	}
-	if (kind == "dataset" || kind == "operation") && action == "show" {
+	if (kind == "dataset" || kind == "snapshot" || kind == "run" || kind == "operation") && action == "show" {
 		id = fs.String("id", "", "")
 	}
 	if kind == "ref" && action == "show" {
 		name = fs.String("name", "", "")
 	}
-	if action == "publish" || kind == "ref" && action == "set" {
+	if action == "publish" || action == "create" || action == "register" || kind == "ref" && action == "set" {
 		request = fs.String("request", "", "")
 	}
 	if action == "list" {
@@ -131,6 +131,10 @@ func runCatalog(args []string) int {
 		case request != nil:
 			if kind == "dataset" {
 				result, e = service.PublishDataset(ctx, parsed)
+			} else if kind == "snapshot" {
+				result, e = service.SaveSnapshot(ctx, parsed)
+			} else if kind == "run" {
+				result, e = service.RegisterRun(ctx, parsed)
 			} else {
 				result, e = service.SetReference(ctx, parsed)
 			}
@@ -149,9 +153,9 @@ func runCatalog(args []string) int {
 					Reference     catalog.ReferenceResult `json:"reference"`
 				}{1, v.Sequence(), catalog.ReferenceResult{Name: *name, TargetKind: r.TargetKind, TargetID: r.TargetID, Revision: r.Revision}}
 			}
-		case kind == "dataset" && action == "show":
+		case (kind == "dataset" || kind == "snapshot" || kind == "run") && action == "show":
 			r, ok := v.GetRecord(catalog.ID(*id))
-			if !ok {
+			if !ok || string(r.Kind) != kind {
 				e = catalog.ErrNotFound
 			} else {
 				result = struct {
@@ -181,7 +185,15 @@ func runCatalog(args []string) int {
 				e = catalog.ErrInvalidInput
 				break
 			}
-			result, e = service.ListDatasets(ctx, catalog.ListOptions{AfterSequence: a, Limit: l, ViewSequence: w})
+			opts := catalog.ListOptions{AfterSequence: a, Limit: l, ViewSequence: w}
+			switch kind {
+			case "dataset":
+				result, e = service.ListDatasets(ctx, opts)
+			case "snapshot":
+				result, e = service.ListSnapshots(ctx, opts)
+			case "run":
+				result, e = service.ListRuns(ctx, opts)
+			}
 		}
 	}
 	if e != nil {
