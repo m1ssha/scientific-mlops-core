@@ -262,7 +262,7 @@ SaveSnapshot(context.Context, Command) (Receipt, error)
 RegisterRun(context.Context, Command) (Receipt, error)
 SetReference(context.Context, Command) (Receipt, error)
 GetOperation(context.Context, ID) (Receipt, error)
-Read(context.Context) (View, error)
+Repository(context.Context) (View, error)
 Compare(context.Context, RecordKind, ID, ID) (Diff, error)
 PlanRecovery(context.Context, ID) (RecoveryPlan, error)
 ```
