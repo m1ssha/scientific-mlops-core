@@ -131,7 +131,11 @@ func snapshotProjection(b SnapshotBody) map[string]any {
 	}
 	conditions := map[string]any{}
 	for k, v := range b.Environment.Conditions {
-		conditions[k] = v
+		value := map[string]any{"type": v.Type}
+		if v.Type != "null" {
+			value["value"] = v.Value
+		}
+		conditions[k] = value
 	}
 	return map[string]any{"profile_id": b.ProfileID, "inputs": inputs, "code": map[string]any{"repository": b.Code.Repository, "commit": b.Code.Commit, "entry_point": b.Code.EntryPoint}, "parameters": params, "split": map[string]any{"description": b.Split.Description, "materials": b.Split.Materials}, "environment": map[string]any{"description": b.Environment.Description, "materials": b.Environment.Materials, "conditions": conditions}, "materials": materials}
 }

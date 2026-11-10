@@ -7,6 +7,7 @@ import (
 	"math"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -202,5 +203,88 @@ func TestCompareRunsProfilesAndDirections(t *testing.T) {
 	c = find(d, "/metrics/accuracy")
 	if c.Kind != "incomparable" || c.Delta != nil {
 		t.Fatal(c)
+	}
+}
+
+func TestCompareEnvironmentConditionFields(t *testing.T) {
+	raw, err := os.ReadFile("../docs/contracts/v1/catalog-example.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	g, err := decodeGeneration(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	leftSnapshot := ID("00000000000000000000000000000002")
+	rightSnapshot := ID("00000000000000000000000000000007")
+	leftRecord := g.Records[leftSnapshot]
+	leftBody := leftRecord.Body.(SnapshotBody)
+	leftBody.Environment.Conditions = map[string]TypedValue{
+		"a/b~c":   {Type: "null"},
+		"removed": {Type: "boolean", Value: true},
+	}
+	leftRecord.Body = leftBody
+	g.Records[leftSnapshot] = leftRecord
+	rightRecord := leftRecord
+	rightRecord.ID = rightSnapshot
+	rightBody := leftBody
+	rightBody.Environment.Conditions = map[string]TypedValue{
+		"a/b~c": {Type: "string", Value: ""},
+		"added": {Type: "null"},
+	}
+	rightRecord.Body = rightBody
+	g.Records[rightSnapshot] = rightRecord
+	leftRun := ID("00000000000000000000000000000003")
+	rightRun := ID("00000000000000000000000000000004")
+	runRecord := g.Records[rightRun]
+	runBody := runRecord.Body.(RunBody)
+	runBody.SnapshotID = rightSnapshot
+	runRecord.Body = runBody
+	g.Records[rightRun] = runRecord
+	svc := NewService(&diffStore{v: snapshot{g}}, nil)
+	for _, tc := range []struct {
+		kind        RecordKind
+		left, right ID
+		prefix      string
+	}{
+		{Snapshot, leftSnapshot, rightSnapshot, "/environment/conditions"},
+		{Run, leftRun, rightRun, "/conditions/environment/conditions"},
+	} {
+		for _, reverse := range []bool{false, true} {
+			l, r := tc.left, tc.right
+			if reverse {
+				l, r = r, l
+			}
+			d, e := svc.Compare(context.Background(), tc.kind, l, r)
+			if e != nil {
+				t.Fatal(e)
+			}
+			var got []Change
+			for _, c := range d.Changes {
+				if strings.HasPrefix(c.Path, tc.prefix+"/") {
+					got = append(got, c)
+				}
+			}
+			want := []Change{
+				{Path: tc.prefix + "/added", Kind: "added", Right: map[string]any{"type": "null"}},
+				{Path: tc.prefix + "/a~1b~0c/type", Kind: "changed", Left: "null", Right: "string"},
+				{Path: tc.prefix + "/a~1b~0c/value", Kind: "added", Right: ""},
+				{Path: tc.prefix + "/removed", Kind: "removed", Left: map[string]any{"type": "boolean", "value": true}},
+			}
+			if reverse {
+				for i := range want {
+					c := &want[i]
+					c.Left, c.Right = c.Right, c.Left
+					if c.Kind == "added" {
+						c.Kind = "removed"
+					} else if c.Kind == "removed" {
+						c.Kind = "added"
+					}
+				}
+			}
+			if !reflect.DeepEqual(got, want) {
+				t.Fatalf("%s reverse=%v: got %#v want %#v", tc.kind, reverse, got, want)
+			}
+		}
 	}
 }
