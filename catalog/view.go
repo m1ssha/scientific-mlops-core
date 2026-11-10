@@ -15,18 +15,11 @@ type generation struct {
 }
 type snapshot struct{ g generation }
 
-func copyRecord(r Record) Record {
-	r.Body.Files = append([]DatasetFile{}, r.Body.Files...)
-	if r.Body.PredecessorID != nil {
-		id := *r.Body.PredecessorID
-		r.Body.PredecessorID = &id
-	}
-	return r
-}
+func copyRecord(r Record) Record { r.Body = cloneBody(r.Body); return r }
 func copyCommand(c Command) Command {
-	if b, ok := c.Body.(DatasetBody); ok {
-		b, _ = normalizeDataset(b)
-		c.Body = b
+	switch c.Body.(type) {
+	case DatasetBody, SnapshotBody, RunBody:
+		c.Body = cloneBody(c.Body)
 	}
 	if c.RefUpdate != nil {
 		u := *c.RefUpdate

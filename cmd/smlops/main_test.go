@@ -182,3 +182,59 @@ func TestCatalogCLIRetryWithoutObjectLayout(t *testing.T) {
 	writeRequest("00000000000000000000000000000003", "null")
 	run(1, "storage", "dataset", "publish", "--store", store, "--request", request)
 }
+
+func TestExperimentCLI(t *testing.T) {
+	dir := t.TempDir()
+	bin := filepath.Join(dir, "smlops")
+	if out, e := exec.Command("go", "build", "-o", bin, ".").CombinedOutput(); e != nil {
+		t.Fatalf("%s: %v", out, e)
+	}
+	store := filepath.Join(dir, "store")
+	if e := os.Mkdir(store, 0700); e != nil {
+		t.Fatal(e)
+	}
+	invoke := func(args ...string) []byte {
+		t.Helper()
+		out, e := exec.Command(bin, args...).CombinedOutput()
+		if e != nil {
+			t.Fatalf("%v: %s %v", args, out, e)
+		}
+		return out
+	}
+	repo := "00000000000000000000000000000001"
+	invoke("repository", "init", "--store", store, "--repository-id", repo)
+	req := filepath.Join(dir, "request.json")
+	write := func(s string) {
+		t.Helper()
+		if e := os.WriteFile(req, []byte(s), 0600); e != nil {
+			t.Fatal(e)
+		}
+	}
+	write(`{"schema_version":1,"repository_id":"` + repo + `","operation_id":"00000000000000000000000000000002","type":"publish_dataset","body":{"predecessor_id":null,"files":[]},"ref_update":null}`)
+	var rec struct {
+		RecordID string `json:"record_id"`
+	}
+	if e := json.Unmarshal(invoke("dataset", "publish", "--store", store, "--request", req), &rec); e != nil {
+		t.Fatal(e)
+	}
+	dataset := rec.RecordID
+	body := `{"predecessor_id":null,"profile_id":"test","inputs":[{"role":"input","dataset_id":"` + dataset + `","target_prefix":"data"}],"code":{"repository":"example","commit":"1111111111111111111111111111111111111111","entry_point":"src/main"},"parameters":{},"split":{"description":"split","materials":["split"]},"environment":{"description":"env","materials":["env"],"conditions":{}},"materials":[{"name":"code","purpose":"code","required":true,"path":"src/main","source":{"kind":"external","locator":"example:code","expected_object":null}},{"name":"env","purpose":"environment","required":true,"path":"env","source":{"kind":"external","locator":"example:env","expected_object":null}},{"name":"split","purpose":"split","required":true,"path":"split","source":{"kind":"external","locator":"example:split","expected_object":null}}]}`
+	write(`{"schema_version":1,"repository_id":"` + repo + `","operation_id":"00000000000000000000000000000003","type":"save_snapshot","body":` + body + `,"ref_update":null}`)
+	if e := json.Unmarshal(invoke("snapshot", "create", "--store", store, "--request", req), &rec); e != nil {
+		t.Fatal(e)
+	}
+	snapshot := rec.RecordID
+	invoke("snapshot", "show", "--store", store, "--id", snapshot)
+	invoke("snapshot", "list", "--store", store, "--after-sequence", "0", "--limit", "10", "--view-sequence", "2")
+	write(`{"schema_version":1,"repository_id":"` + repo + `","operation_id":"00000000000000000000000000000004","type":"register_run","body":{"snapshot_id":"` + snapshot + `","source_run_id":null,"started_at":null,"finished_at":null,"outcome":"interrupted","reason":"stopped","observations":{},"metrics":{},"outputs":[],"evidence_source":"caller_reported"},"ref_update":null}`)
+	first := invoke("run", "register", "--store", store, "--request", req)
+	second := invoke("run", "register", "--store", store, "--request", req)
+	if string(first) != string(second) {
+		t.Fatal("retry changed receipt")
+	}
+	if e := json.Unmarshal(first, &rec); e != nil {
+		t.Fatal(e)
+	}
+	invoke("run", "show", "--store", store, "--id", rec.RecordID)
+	invoke("run", "list", "--store", store, "--after-sequence", "0", "--limit", "10", "--view-sequence", "3")
+}

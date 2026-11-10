@@ -77,6 +77,9 @@ func (s *Service) GetDataset(ctx context.Context, id ID) (Record, error) {
 	return r, nil
 }
 func (s *Service) ListDatasets(ctx context.Context, o ListOptions) (Page, error) {
+	return s.listKind(ctx, o, Dataset)
+}
+func (s *Service) listKind(ctx context.Context, o ListOptions, kind RecordKind) (Page, error) {
 	if o.AfterSequence < 0 || o.Limit <= 0 || o.ViewSequence < 0 || o.AfterSequence > o.ViewSequence {
 		return Page{}, ErrInvalidInput
 	}
@@ -89,7 +92,7 @@ func (s *Service) ListDatasets(ctx context.Context, o ListOptions) (Page, error)
 	}
 	items := []Record{}
 	for _, r := range v.ListRecords() {
-		if r.Kind == Dataset && r.Sequence > o.AfterSequence && r.Sequence <= o.ViewSequence {
+		if r.Kind == kind && r.Sequence > o.AfterSequence && r.Sequence <= o.ViewSequence {
 			items = append(items, r)
 		}
 	}
@@ -128,9 +131,38 @@ func normalize(c Command, typ string) (Command, error) {
 			}
 			c.RefUpdate = &u
 		}
+	case "save_snapshot":
+		b, ok := c.Body.(SnapshotBody)
+		if !ok {
+			return c, ErrInvalidInput
+		}
+		var err error
+		b, err = normalizeSnapshot(b)
+		if err != nil {
+			return c, err
+		}
+		c.Body = b
+		if c.RefUpdate != nil {
+			u := *c.RefUpdate
+			if !validName(u.Name) || u.ExpectedRevision < 0 {
+				return c, ErrInvalidInput
+			}
+			c.RefUpdate = &u
+		}
+	case "register_run":
+		b, ok := c.Body.(RunBody)
+		if !ok || c.RefUpdate != nil {
+			return c, ErrInvalidInput
+		}
+		var err error
+		b, err = normalizeRun(b)
+		if err != nil {
+			return c, err
+		}
+		c.Body = b
 	case "set_reference":
 		b, ok := c.Body.(SetReferenceBody)
-		if !ok || !validName(b.Name) || !validID(b.TargetID) || b.TargetKind != Dataset || b.ExpectedRevision < 0 || c.RefUpdate != nil {
+		if !ok || !validName(b.Name) || !validID(b.TargetID) || (b.TargetKind != Dataset && b.TargetKind != Snapshot) || b.ExpectedRevision < 0 || c.RefUpdate != nil {
 			return c, ErrInvalidInput
 		}
 		c.Body = b
@@ -187,6 +219,36 @@ func checkRef(v View, name string, expected int64, kind RecordKind) (int64, erro
 }
 func (s *Service) PublishDataset(ctx context.Context, c Command) (Receipt, error) {
 	return s.mutate(ctx, c, "publish_dataset")
+}
+func (s *Service) SaveSnapshot(ctx context.Context, c Command) (Receipt, error) {
+	return s.mutate(ctx, c, "save_snapshot")
+}
+func (s *Service) RegisterRun(ctx context.Context, c Command) (Receipt, error) {
+	return s.mutate(ctx, c, "register_run")
+}
+func (s *Service) GetSnapshot(ctx context.Context, id ID) (Record, error) {
+	return s.getKind(ctx, id, Snapshot)
+}
+func (s *Service) GetRun(ctx context.Context, id ID) (Record, error) { return s.getKind(ctx, id, Run) }
+func (s *Service) getKind(ctx context.Context, id ID, k RecordKind) (Record, error) {
+	if !validID(id) {
+		return Record{}, ErrInvalidInput
+	}
+	v, e := s.metadata.Read(ctx)
+	if e != nil {
+		return Record{}, e
+	}
+	r, ok := v.GetRecord(id)
+	if !ok || r.Kind != k {
+		return Record{}, ErrNotFound
+	}
+	return r, nil
+}
+func (s *Service) ListSnapshots(ctx context.Context, o ListOptions) (Page, error) {
+	return s.listKind(ctx, o, Snapshot)
+}
+func (s *Service) ListRuns(ctx context.Context, o ListOptions) (Page, error) {
+	return s.listKind(ctx, o, Run)
 }
 func (s *Service) SetReference(ctx context.Context, c Command) (Receipt, error) {
 	return s.mutate(ctx, c, "set_reference")
@@ -247,6 +309,58 @@ func (s *Service) mutate(ctx context.Context, c Command, typ string) (result Rec
 			kind = Dataset
 			record := Record{1, id, kind, result.Sequence, b}
 			if e = tx.AddRecord(record); e != nil {
+				return e
+			}
+			result.RecordID = &id
+			result.RecordKind = &kind
+		} else if typ == "save_snapshot" || typ == "register_run" {
+			kind = Snapshot
+			if typ == "save_snapshot" {
+				b := c.Body.(SnapshotBody)
+				if e := checkSnapshotRefs(v, b); e != nil {
+					return e
+				}
+				if c.RefUpdate != nil {
+					name = c.RefUpdate.Name
+					expected = c.RefUpdate.ExpectedRevision
+					update = true
+					if _, e := checkRef(v, name, expected, kind); e != nil {
+						return e
+					}
+				}
+				for _, input := range b.Inputs {
+					r, _ := v.GetRecord(input.DatasetID)
+					for _, f := range r.Body.(DatasetBody).Files {
+						if e := verify(ctx, s.objects, f.Object); e != nil {
+							return e
+						}
+					}
+				}
+				for _, m := range b.Materials {
+					if m.Source.Kind == "object" {
+						if e := verify(ctx, s.objects, *m.Source.Object); e != nil {
+							return e
+						}
+					}
+				}
+			} else {
+				kind = Run
+				b := c.Body.(RunBody)
+				if e := checkRunRefs(v, b); e != nil {
+					return e
+				}
+				for _, o := range b.Outputs {
+					if e := verify(ctx, s.objects, o.Object); e != nil {
+						return e
+					}
+				}
+			}
+			id, e := randomID(v)
+			if e != nil {
+				return e
+			}
+			target = id
+			if e = tx.AddRecord(Record{1, id, kind, result.Sequence, c.Body}); e != nil {
 				return e
 			}
 			result.RecordID = &id
