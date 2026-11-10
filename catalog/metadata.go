@@ -8,9 +8,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/big"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"syscall"
 	"time"
@@ -297,12 +297,10 @@ func decodeGeneration(b []byte) (generation, error) {
 		if e != nil {
 			return z, ErrIntegrity
 		}
-		original, _ := json.Marshal(c.Body)
-		var rawNormalized any
-		var encodedNormalized any
-		if decodeNumber(rr.Body, &rawNormalized) != nil || decodeNumber(original, &encodedNormalized) != nil || !equalJSON(rawNormalized, encodedNormalized) {
+		if !bodyMatchesNormalized(rr.Body, c.Body) {
 			return z, ErrIntegrity
 		}
+
 		g.Records[id] = Record{rr.SchemaVersion, rr.ID, rr.Kind, rr.Sequence, c.Body}
 	}
 	for name, b := range raw.References {
@@ -367,9 +365,7 @@ func decodeGeneration(b []byte) (generation, error) {
 		if json.Unmarshal(o.Command, &original) != nil {
 			return z, ErrIntegrity
 		}
-		bodyJSON, _ := json.Marshal(c.Body)
-		var rawBody, normalizedBody any
-		if decodeNumber(original.Body, &rawBody) != nil || decodeNumber(bodyJSON, &normalizedBody) != nil || !equalJSON(rawBody, normalizedBody) {
+		if !bodyMatchesNormalized(original.Body, c.Body) {
 			return z, ErrIntegrity
 		}
 
@@ -496,46 +492,16 @@ func sameBody(a, b any) bool {
 	return bytes.Equal(aa, bb)
 }
 
-func decodeNumber(data []byte, v any) error {
-	d := json.NewDecoder(bytes.NewReader(data))
-	d.UseNumber()
-	return d.Decode(v)
-}
-
-func equalJSON(a, b any) bool {
-	switch x := a.(type) {
-	case json.Number:
-		y, ok := b.(json.Number)
-		if !ok {
-			return false
-		}
-		xr, xok := new(big.Rat).SetString(string(x))
-		yr, yok := new(big.Rat).SetString(string(y))
-		return xok && yok && xr.Cmp(yr) == 0
-	case map[string]any:
-		y, ok := b.(map[string]any)
-		if !ok || len(x) != len(y) {
-			return false
-		}
-		for k, v := range x {
-			w, ok := y[k]
-			if !ok || !equalJSON(v, w) {
-				return false
-			}
-		}
-		return true
-	case []any:
-		y, ok := b.([]any)
-		if !ok || len(x) != len(y) {
-			return false
-		}
-		for i := range x {
-			if !equalJSON(x[i], y[i]) {
-				return false
-			}
-		}
-		return true
-	default:
-		return a == b
+// Compare schema-typed bodies: int64 stays exact, floats compare as binary64,
+// and arrays retain their order while maps remain unordered.
+func bodyMatchesNormalized(raw []byte, normalized any) bool {
+	t := reflect.TypeOf(normalized)
+	if t == nil {
+		return false
 	}
+	dst := reflect.New(t)
+	if strictDecode(raw, dst.Interface()) != nil {
+		return false
+	}
+	return reflect.DeepEqual(dst.Elem().Interface(), normalized)
 }

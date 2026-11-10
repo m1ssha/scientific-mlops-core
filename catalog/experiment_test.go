@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/m1ssha/scientific-mlops-core/object"
@@ -117,5 +119,63 @@ func TestExperimentStrictJSON(t *testing.T) {
 		if strictDecode([]byte(raw), &v) == nil {
 			t.Fatalf("accepted %s", raw)
 		}
+	}
+}
+
+func TestCatalogBinary64AndExactInteger(t *testing.T) {
+	fixture, e := os.ReadFile("../docs/contracts/v1/catalog-example.json")
+	if e != nil {
+		t.Fatal(e)
+	}
+	var env struct {
+		SchemaVersion int             `json:"schema_version"`
+		PayloadSHA256 string          `json:"payload_sha256"`
+		Payload       json.RawMessage `json:"payload"`
+	}
+	if e = json.Unmarshal(fixture, &env); e != nil {
+		t.Fatal(e)
+	}
+	makeCatalog := func(payload string) []byte {
+		t.Helper()
+		var compact bytes.Buffer
+		if err := json.Compact(&compact, []byte(payload)); err != nil {
+			t.Fatal(err)
+		}
+		payload = compact.String()
+		sum := sha256.Sum256([]byte(payload))
+		out, e := json.Marshal(struct {
+			SchemaVersion int             `json:"schema_version"`
+			PayloadSHA256 string          `json:"payload_sha256"`
+			Payload       json.RawMessage `json:"payload"`
+		}{1, fmt.Sprintf("%x", sum), json.RawMessage(payload)})
+		if e != nil {
+			t.Fatal(e)
+		}
+		return out
+	}
+	payload := string(env.Payload)
+	payload = strings.ReplaceAll(payload, `"parameters": {`, `"parameters": {"fraction":{"type":"number","value":0.10000000000000001},`)
+	payload = strings.ReplaceAll(payload, `"value": 1.0`, `"value": 0.10000000000000001`)
+	payload = strings.ReplaceAll(payload, `"value": 1`+"\n", `"value": 9007199254740993`+"\n")
+	if _, e = decodeGeneration(makeCatalog(payload)); e != nil {
+		t.Fatalf("binary64 or int64 rejected: %v", e)
+	}
+	altered := strings.Replace(payload, `"value": 9007199254740993`, `"value": 9007199254740992`, 1)
+	if _, e = decodeGeneration(makeCatalog(altered)); !errors.Is(e, ErrIntegrity) {
+		t.Fatalf("different large integers accepted: %v", e)
+	}
+	zero := strings.ReplaceAll(payload, `0.10000000000000001`, `-0.0`)
+	if _, e = decodeGeneration(makeCatalog(zero)); e != nil {
+		t.Fatalf("negative zero rejected: %v", e)
+	}
+}
+func TestBodyNormalizationKeepsArrayOrder(t *testing.T) {
+	b := DatasetBody{Files: []DatasetFile{{Path: "a", Object: object.Ref{Algorithm: "sha256", Digest: strings.Repeat("0", 64), Size: 0}}, {Path: "b", Object: object.Ref{Algorithm: "sha256", Digest: strings.Repeat("0", 64), Size: 0}}}}
+	raw, e := json.Marshal(DatasetBody{Files: []DatasetFile{b.Files[1], b.Files[0]}})
+	if e != nil {
+		t.Fatal(e)
+	}
+	if bodyMatchesNormalized(raw, b) {
+		t.Fatal("accepted non-normalized array order")
 	}
 }
