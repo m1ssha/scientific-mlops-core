@@ -1,0 +1,13 @@
+{
+  "operation_id": "e539a7f08796461f821d624bf91cfb83",
+  "record_id": null,
+  "record_kind": null,
+  "reference": {
+    "name": "latest",
+    "revision": 1,
+    "target_id": "997e5c879e3a6d4175050fe052fe38fe",
+    "target_kind": "snapshot"
+  },
+  "schema_version": 1,
+  "sequence": 4
+}

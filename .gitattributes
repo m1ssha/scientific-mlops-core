@@ -1,3 +1,6 @@
 # Preserve hash-addressed source data and CSV evidence byte-for-byte.
 examples/wine/data/wine.data -text
 examples/wine/evidence/**/predictions.csv -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+# Keep every hashed Wine cycle evidence byte unchanged.
+examples/wine_catalog/evidence/issue20/** -text
+examples/wine_catalog/evidence/issue20/repeat-output/predictions.csv whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

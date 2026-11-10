@@ -1,0 +1,88 @@
+{
+  "changes": [
+    {
+      "delta": null,
+      "kind": "changed",
+      "left": {
+        "name": "config.json",
+        "path": "wine/config.json",
+        "purpose": "configuration",
+        "required": true,
+        "source": {
+          "kind": "object",
+          "object": {
+            "algorithm": "sha256",
+            "digest": "2ccf75e06a3083747ee7e28c36d54d34352bf542474659624574d4e2beb6a361",
+            "size": 92
+          }
+        }
+      },
+      "path": "/materials/config.json",
+      "right": {
+        "name": "config.json",
+        "path": "wine/config.json",
+        "purpose": "configuration",
+        "required": true,
+        "source": {
+          "kind": "object",
+          "object": {
+            "algorithm": "sha256",
+            "digest": "49d4dfb1370fb8c2239c7b9987c3251381e7a0b5d234803d867d0e7d8a0322a6",
+            "size": 117
+          }
+        }
+      }
+    },
+    {
+      "delta": null,
+      "kind": "changed",
+      "left": {
+        "name": "manifest.json",
+        "path": "wine/manifest.json",
+        "purpose": "configuration",
+        "required": true,
+        "source": {
+          "kind": "object",
+          "object": {
+            "algorithm": "sha256",
+            "digest": "876fb9ee28e6e1501fa1ca32782e11786c3162ab7b1500f885d4a8554bc4f9b1",
+            "size": 934
+          }
+        }
+      },
+      "path": "/materials/manifest.json",
+      "right": {
+        "name": "manifest.json",
+        "path": "wine/manifest.json",
+        "purpose": "configuration",
+        "required": true,
+        "source": {
+          "kind": "object",
+          "object": {
+            "algorithm": "sha256",
+            "digest": "1b4a1496867853d0557301221e64d44c4c530ad9285ce218e1e831ba637b4d2d",
+            "size": 934
+          }
+        }
+      }
+    },
+    {
+      "delta": null,
+      "kind": "changed",
+      "left": {
+        "type": "number",
+        "value": 1
+      },
+      "path": "/parameters/config.C",
+      "right": {
+        "type": "number",
+        "value": 2
+      }
+    }
+  ],
+  "kind": "snapshot",
+  "left_id": "997e5c879e3a6d4175050fe052fe38fe",
+  "right_id": "1eeca8ab16e13930a3fe014ce7752c42",
+  "schema_version": 1,
+  "view_sequence": 5
+}

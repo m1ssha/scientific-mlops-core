@@ -1,0 +1,19 @@
+{
+  "body": {
+    "evidence_source": "caller_reported",
+    "finished_at": null,
+    "metrics": {},
+    "observations": {},
+    "outcome": "failed",
+    "outputs": [],
+    "reason": "required materials unavailable",
+    "snapshot_id": "997e5c879e3a6d4175050fe052fe38fe",
+    "source_run_id": "bd06076391e4cd4e2b0294f933ba93a0",
+    "started_at": null
+  },
+  "operation_id": "89b87c69755c4a69ac40b539eb08af03",
+  "ref_update": null,
+  "repository_id": "07cd79b52a064272989b9d44664f137a",
+  "schema_version": 1,
+  "type": "register_run"
+}
