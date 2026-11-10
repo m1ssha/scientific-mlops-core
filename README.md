@@ -130,6 +130,7 @@ Go API записи изменился: поле `Record.Body` теперь со
 - [Спецификация MVP](docs/mvp-spec.md) и [контракты версии 1](docs/contracts-v1.md).
 - [Архитектура](docs/architecture.md), [компоненты](docs/components.md) и [схема](docs/component-map.svg).
 - [Предлагаемые архитектурные решения](docs/adr/README.md) - ADR остаются в статусе proposed.
+- [Проверка интеграции и следующая очередь](docs/integration-validation.md).
 - [Дизайн Wine-эксперимента](docs/wine-experiment-design.md) и [результаты с независимым ревью](examples/wine/evidence/REPORT.md). Локальные повторы не подтверждают переносимость или обобщающую способность модели.
 
 [Scientific MLOps Platform](https://github.com/m1ssha/scientific-mlops-platform) - отдельный проект пользовательского интерфейса и API поверх ядра; его реализация отложена.
