@@ -3,7 +3,7 @@
 Проект от 2026-11-09 для Issue #2. Документ описывает целевой контракт,
 часть которого реализована в прототипе каталога datasets, snapshots и runs. Доступные команды
 и ограничения перечислены в [README](../README.md#каталог-версий-данных);
-сравнение и восстановление остаются проектируемыми.
+сравнение реализовано, восстановление остаётся проектируемым.
 ADR 0003-0009 остаются proposed. Принятие существенных решений требует
 независимого ревью и явного согласия сопровождающего проект.
 
@@ -252,7 +252,7 @@ limit - положительный int64; ответ имеет view_sequence и
 
 Пакет catalog реализует срез dataset, snapshot, run и ссылок; актуальную поверхность см. в
 [README](../README.md#каталог-версий-данных) и Go-коде. Следующая целевая
-поверхность включает также ещё не реализованные Diff и RecoveryPlan. Имя Go поля - PascalCase
+поверхность включает Diff и ещё не реализованный RecoveryPlan. Имя Go поля - PascalCase
 соответствующего snake_case, ID/JSON сохраняют общепринятые аббревиатуры.
 Целевая поверхность Service (включает будущие методы):
 
@@ -299,7 +299,7 @@ smlops recovery plan --store DIR --run ID
 
 В этом списке реализованы repository init/show, dataset publish/show/list,
 snapshot create/show/list, run register/show/list, ref set/show и operation show;
-diff и recovery остаются будущими.
+diff реализован; recovery остаётся будущим.
 FILE - Command JSON без угадываемых ID/CAS по текущему
 имени. Объекты загружаются отдельной object put. init возвращает
 {schema_version,repository_id,sequence:0}; остальные success - Receipt либо

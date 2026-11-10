@@ -225,4 +225,46 @@ func TestIntegratedWorkflow(t *testing.T) {
 		t.Fatalf("failed mutations changed sequence: %+v %v", state, e)
 	}
 
+	fixtureRoot := filepath.Join(dir, "fixture-store")
+	if e = os.Mkdir(fixtureRoot, 0700); e != nil {
+		t.Fatal(e)
+	}
+	ok("repository", "init", "--store", fixtureRoot, "--repository-id", repository)
+	fixture, e := os.ReadFile("../../docs/contracts/v1/catalog-example.json")
+	if e != nil {
+		t.Fatal(e)
+	}
+	if e = os.WriteFile(filepath.Join(fixtureRoot, "metadata", "catalog.json"), fixture, 0600); e != nil {
+		t.Fatal(e)
+	}
+	before, e := os.ReadFile(filepath.Join(fixtureRoot, "metadata", "catalog.json"))
+	if e != nil {
+		t.Fatal(e)
+	}
+	for _, tc := range []struct{ kind, left, right string }{
+		{"dataset", "00000000000000000000000000000001", "00000000000000000000000000000006"},
+		{"run", "00000000000000000000000000000003", "00000000000000000000000000000004"},
+		{"snapshot", "00000000000000000000000000000002", "00000000000000000000000000000002"},
+	} {
+		out := ok("diff", tc.kind, "--store", fixtureRoot, "--left", tc.left, "--right", tc.right)
+		var d struct {
+			Kind         string            `json:"kind"`
+			ViewSequence int               `json:"view_sequence"`
+			Changes      []json.RawMessage `json:"changes"`
+		}
+		if json.Unmarshal(out, &d) != nil || d.Kind != tc.kind || d.ViewSequence != 6 || d.Changes == nil {
+			t.Fatalf("diff: %s", out)
+		}
+	}
+	if _, code = call("diff", "run", "--store", fixtureRoot, "--left", "00000000000000000000000000000001", "--right", "00000000000000000000000000000004"); code != "not_found" {
+		t.Fatal(code)
+	}
+	after, e := os.ReadFile(filepath.Join(fixtureRoot, "metadata", "catalog.json"))
+	if e != nil || !bytes.Equal(before, after) {
+		t.Fatal("diff changed history", e)
+	}
+	if _, e = os.Stat(filepath.Join(fixtureRoot, "objects")); !os.IsNotExist(e) {
+		t.Fatal("diff opened object store", e)
+	}
+
 }
