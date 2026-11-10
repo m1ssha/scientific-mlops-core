@@ -1,0 +1,163 @@
+{
+  "body": {
+    "evidence_source": "caller_reported",
+    "finished_at": "2026-11-10T09:42:12.742548Z",
+    "metrics": {
+      "dummy.accuracy": {
+        "definition": "Wine v1 dummy: correct predictions / test count",
+        "unit": "ratio",
+        "value": 0.4
+      },
+      "dummy.balanced_accuracy": {
+        "definition": "Wine v1 dummy: mean per-class recall across Wine classes 1, 2, 3",
+        "unit": "ratio",
+        "value": 0.3333333333333333
+      },
+      "model.accuracy": {
+        "definition": "Wine v1 model: correct predictions / test count",
+        "unit": "ratio",
+        "value": 1
+      },
+      "model.balanced_accuracy": {
+        "definition": "Wine v1 model: mean per-class recall across Wine classes 1, 2, 3",
+        "unit": "ratio",
+        "value": 1
+      }
+    },
+    "observations": {
+      "backends": {
+        "evidence": "Wine preflight fingerprint verified",
+        "status": "passed",
+        "value": {
+          "type": "string",
+          "value": "[{\"architecture\":\"Haswell\",\"basename\":\"libscipy_openblas-5f890258.so\",\"internal_api\":\"openblas\",\"num_threads\":1,\"sha256\":\"2a5b4c1a6311873c59132b2ceaaf3c26258a17350b7cd27ea8782a47e3322981\",\"threading_layer\":\"pthreads\",\"version\":\"0.3.31.dev\"},{\"architecture\":\"Haswell\",\"basename\":\"libscipy_openblas64_-f48b354e.so\",\"internal_api\":\"openblas\",\"num_threads\":1,\"sha256\":\"432e1c1739731468ba305771af96773939e43016643e2d630f58cb45b6670e96\",\"threading_layer\":\"pthreads\",\"version\":\"0.3.34.106.0\"},{\"architecture\":null,\"basename\":\"libgomp-e985bcbb.so.1.0.0\",\"internal_api\":\"openmp\",\"num_threads\":1,\"sha256\":\"a43904e4fa297301d4640dc1bb3c8a3480b406f99e498eba9b1914b68aab604a\",\"threading_layer\":null,\"version\":null}]"
+        }
+      },
+      "libc": {
+        "evidence": "Wine preflight fingerprint verified",
+        "status": "passed",
+        "value": {
+          "type": "string",
+          "value": "[\"glibc\",\"2.43\"]"
+        }
+      },
+      "lock_sha256": {
+        "evidence": "Wine preflight fingerprint verified",
+        "status": "passed",
+        "value": {
+          "type": "string",
+          "value": "074a34a6da4618dbcf50315add680a8e7693670d97593abf61872d0dadc58e10"
+        }
+      },
+      "machine": {
+        "evidence": "Wine preflight fingerprint verified",
+        "status": "passed",
+        "value": {
+          "type": "string",
+          "value": "x86_64"
+        }
+      },
+      "packages": {
+        "evidence": "Wine preflight fingerprint verified",
+        "status": "passed",
+        "value": {
+          "type": "string",
+          "value": "{\"cloudpickle\":\"3.1.2\",\"joblib\":\"1.6.0\",\"narwhals\":\"2.28.0\",\"numpy\":\"2.5.4\",\"scikit-learn\":\"1.9.1\",\"scipy\":\"1.18.1\",\"threadpoolctl\":\"3.8.0\"}"
+        }
+      },
+      "python_implementation": {
+        "evidence": "Wine preflight fingerprint verified",
+        "status": "passed",
+        "value": {
+          "type": "string",
+          "value": "CPython"
+        }
+      },
+      "python_version": {
+        "evidence": "Wine preflight fingerprint verified",
+        "status": "passed",
+        "value": {
+          "type": "string",
+          "value": "3.12.15"
+        }
+      },
+      "system": {
+        "evidence": "Wine preflight fingerprint verified",
+        "status": "passed",
+        "value": {
+          "type": "string",
+          "value": "Linux"
+        }
+      },
+      "threads": {
+        "evidence": "Wine preflight fingerprint verified",
+        "status": "passed",
+        "value": {
+          "type": "string",
+          "value": "{\"BLIS_NUM_THREADS\":\"1\",\"MKL_NUM_THREADS\":\"1\",\"OMP_NUM_THREADS\":\"1\",\"OPENBLAS_NUM_THREADS\":\"1\"}"
+        }
+      }
+    },
+    "outcome": "succeeded",
+    "outputs": [
+      {
+        "media_type": "application/json",
+        "object": {
+          "algorithm": "sha256",
+          "digest": "af92ca37429e63956deee7a4b27ed9f74f9169330f6443ad4af199284271a7a5",
+          "size": 1498
+        },
+        "path": "repeat/environment.json",
+        "role": "environment.json"
+      },
+      {
+        "media_type": "application/json",
+        "object": {
+          "algorithm": "sha256",
+          "digest": "0cf3220c9e8dd472a45b1c9a8611a4e1260b07e131fa2e34556e910acf137de5",
+          "size": 964
+        },
+        "path": "repeat/metrics.json",
+        "role": "metrics.json"
+      },
+      {
+        "media_type": "application/json",
+        "object": {
+          "algorithm": "sha256",
+          "digest": "bbf1993c5120e9a0e864cf7e8d27d7d6111933b4ee51517f4aff281c8cfa64d0",
+          "size": 2476
+        },
+        "path": "repeat/model.json",
+        "role": "model.json"
+      },
+      {
+        "media_type": "text/csv",
+        "object": {
+          "algorithm": "sha256",
+          "digest": "6066ccfdb1c96906a234b7dc7faa59c0306999a1f723d2659ad20692f62eef62",
+          "size": 496
+        },
+        "path": "repeat/predictions.csv",
+        "role": "predictions.csv"
+      },
+      {
+        "media_type": "application/json",
+        "object": {
+          "algorithm": "sha256",
+          "digest": "a68cc654fbcba60fcf65d0e21944153ae213b5a6800d6950e81148877ff3f056",
+          "size": 1582
+        },
+        "path": "repeat/result.json",
+        "role": "result.json"
+      }
+    ],
+    "reason": null,
+    "snapshot_id": "997e5c879e3a6d4175050fe052fe38fe",
+    "source_run_id": "bd06076391e4cd4e2b0294f933ba93a0",
+    "started_at": "2026-11-10T09:42:12.035367Z"
+  },
+  "id": "24ea18e02bb1db8b03198ccc6a60a5fb",
+  "kind": "run",
+  "schema_version": 1,
+  "sequence": 6
+}

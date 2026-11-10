@@ -1,0 +1,26 @@
+{
+  "dataset": {
+    "operation_id": "f4565f72179ea58afd9ff73f476afd97",
+    "record_id": "26e5837f94120d49fe85cb9e1d8e1949",
+    "record_kind": "dataset",
+    "reference": null,
+    "schema_version": 1,
+    "sequence": 1
+  },
+  "run": {
+    "operation_id": "7904926123e10b5c281c3b7cd53e9c64",
+    "record_id": "bd06076391e4cd4e2b0294f933ba93a0",
+    "record_kind": "run",
+    "reference": null,
+    "schema_version": 1,
+    "sequence": 3
+  },
+  "snapshot": {
+    "operation_id": "7557641206a1f62c7dcdd4f37e190466",
+    "record_id": "997e5c879e3a6d4175050fe052fe38fe",
+    "record_kind": "snapshot",
+    "reference": null,
+    "schema_version": 1,
+    "sequence": 2
+  }
+}

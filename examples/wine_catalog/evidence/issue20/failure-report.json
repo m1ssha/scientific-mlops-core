@@ -1,0 +1,143 @@
+{
+  "blockers": [
+    {
+      "code": "missing",
+      "material_key": "input:data:wine.data"
+    }
+  ],
+  "error": "required materials unavailable",
+  "execution": "unchecked",
+  "material_checks": [
+    {
+      "check": "missing",
+      "key": "input:data:wine.data",
+      "required": true
+    },
+    {
+      "check": "verified",
+      "key": "material:README.md",
+      "required": true
+    },
+    {
+      "check": "verified",
+      "key": "material:config.json",
+      "required": true
+    },
+    {
+      "check": "verified",
+      "key": "material:data%2FSOURCE.md",
+      "required": true
+    },
+    {
+      "check": "verified",
+      "key": "material:manifest.json",
+      "required": true
+    },
+    {
+      "check": "verified",
+      "key": "material:pipeline.py",
+      "required": true
+    },
+    {
+      "check": "verified",
+      "key": "material:prepare_split.py",
+      "required": true
+    },
+    {
+      "check": "verified",
+      "key": "material:protocol.json",
+      "required": true
+    },
+    {
+      "check": "verified",
+      "key": "material:reference-environment",
+      "required": true
+    },
+    {
+      "check": "verified",
+      "key": "material:requirements.lock",
+      "required": true
+    },
+    {
+      "check": "verified",
+      "key": "material:split.json",
+      "required": true
+    },
+    {
+      "check": "verified",
+      "key": "material:test_pipeline.py",
+      "required": true
+    },
+    {
+      "check": "verified",
+      "key": "material:wheel%3A1f69d6385ec30e2fa6e1fdeb37c562ecabd0f713f6f3e3b58a668c5c9df9567f",
+      "required": true
+    },
+    {
+      "check": "verified",
+      "key": "material:wheel%3A3dbbf9f6e4b592a2357b854608e980fe6390d131d7a82f011a377ef2ebef7aba",
+      "required": true
+    },
+    {
+      "check": "verified",
+      "key": "material:wheel%3A9acb47f6afd73f60dc1df93bb801b472f05ff42fa6c84167d25cb206be1fbf4a",
+      "required": true
+    },
+    {
+      "check": "verified",
+      "key": "material:wheel%3Ae5d7b18a5b9dca241a74695f3275fa4c895a9dadc72b3d8df5fa9d1083c9b83e",
+      "required": true
+    },
+    {
+      "check": "verified",
+      "key": "material:wheel%3Af1b49c82704d50f13ffae019c727b0fa4f6791a58f48f06a09c45face1be66da",
+      "required": true
+    },
+    {
+      "check": "verified",
+      "key": "material:wheel%3Af55fa87b6c612ecd6b058f167c53231b1d14e412efe361d3d6e38b3631c73218",
+      "required": true
+    },
+    {
+      "check": "verified",
+      "key": "material:wheel%3Afbde6962867ee75b48b0ee29b2b9372ec5d617799dbaf38e82dc0596f2f7738a",
+      "required": true
+    },
+    {
+      "check": "verified",
+      "key": "output:reference%2Fenvironment.json",
+      "required": false
+    },
+    {
+      "check": "verified",
+      "key": "output:reference%2Fmetrics.json",
+      "required": false
+    },
+    {
+      "check": "verified",
+      "key": "output:reference%2Fmodel.json",
+      "required": false
+    },
+    {
+      "check": "verified",
+      "key": "output:reference%2Fpredictions.csv",
+      "required": false
+    },
+    {
+      "check": "verified",
+      "key": "output:reference%2Fresult.json",
+      "required": false
+    }
+  ],
+  "materials": "failed",
+  "numerical": "unchecked",
+  "outcome": "failed",
+  "registration": "confirmed",
+  "run_id": "9e977ce2c072b671272d5642dc2c67f8",
+  "runtime": "unchecked",
+  "runtime_preflight": "unchecked",
+  "schema_version": 1,
+  "snapshot_id": "997e5c879e3a6d4175050fe052fe38fe",
+  "source_run_id": "bd06076391e4cd4e2b0294f933ba93a0",
+  "view_sequence": 6
+}
