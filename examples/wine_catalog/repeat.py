@@ -43,7 +43,7 @@ def execute(argv, env=None, on_start=None):
             detail = json.loads(err).get('error')
         except (ValueError, AttributeError):
             detail = None
-        if detail in ('runtime fingerprint differs from reference', 'output fingerprint differs from reference'):
+        if detail in ('runtime fingerprint differs from reference', 'output fingerprint differs from reference', 'invalid output environment'):
             raise ValueError(detail)
         raise ValueError('process failed with exit code ' + str(proc.returncode))
     return out
@@ -128,7 +128,7 @@ def repeat(binary, store, source, python, work):
     work.mkdir(mode=0o700, parents=False, exist_ok=False)
     binary, store, python = map(lambda x: Path(x).absolute(), (binary, store, python))
     report = {'schema_version': 1, 'source_run_id': source, 'snapshot_id': None, 'run_id': None,
-              'materials': 'unchecked', 'runtime': 'unchecked', 'execution': 'unchecked',
+              'materials': 'unchecked', 'runtime_preflight': 'unchecked', 'runtime': 'unchecked', 'execution': 'unchecked',
               'registration': 'unchecked', 'numerical': 'unchecked', 'error': None}
     plan = None; observations = {}; started = finished = None; outcome = 'failed'; metrics = {}; outputs = []; reason = None
     try:
@@ -183,7 +183,7 @@ def repeat(binary, store, source, python, work):
         if params != plan['conditions']['parameters']:
             raise ValueError('parameters differ from snapshot')
         observations = {k: {'status':'passed', 'value':v, 'evidence':'Wine preflight fingerprint verified'} for k,v in expected_conditions.items()}
-        report['runtime'] = 'passed'
+        report['runtime_preflight'] = 'passed'
         # Check the materialized bytes again at the point of use, after setup.
         for m in required:
             try:
@@ -202,6 +202,7 @@ def repeat(binary, store, source, python, work):
         execute([py, '-I', root / 'pipeline.py', 'run', '--phase', 'validation', '--root', root, '--out', work / 'result'], env, on_start=mark_started)
         finished = now()
         validated = json.loads(execute([py, '-I', HELPER, 'validate', root, source_env, work / 'result', refs if have_original else work / 'missing-original'], env))
+        report['runtime'] = 'passed'
         record = validated['record']; started = utc(record['started_at']); finished = utc(record['finished_at'])
         report['execution'] = 'succeeded'; report['numerical'] = validated['comparison']['numerical']
         for classifier in ('model', 'dummy'):
@@ -209,21 +210,25 @@ def repeat(binary, store, source, python, work):
                 definition = ('correct predictions / test count' if metric == 'accuracy' else 'mean per-class recall across Wine classes 1, 2, 3')
                 metrics[classifier + '.' + metric] = {'definition': 'Wine v1 ' + classifier + ': ' + definition, 'unit': 'ratio', 'value': validated['metrics'][classifier][metric]['value']}
         for name in OUTPUTS:
-            path = work / 'result' / name; data = path.read_bytes(); digest = hashlib.sha256(data).hexdigest()
-            cli(binary, 'object', 'put', '--store', store, '--file', path, '--sha256', digest, '--size', str(len(data)))
-            outputs.append({'path':'repeat/' + name, 'role':name, 'media_type':'text/csv' if name.endswith('.csv') else 'application/json', 'object':{'algorithm':'sha256', 'digest':digest, 'size':len(data)}})
+            path = work / 'result' / name; ref = validated['output_refs'][name]
+            cli(binary, 'object', 'put', '--store', store, '--file', path, '--sha256', ref['digest'], '--size', str(ref['size']))
+            outputs.append({'path':'repeat/' + name, 'role':name, 'media_type':'text/csv' if name.endswith('.csv') else 'application/json', 'object':ref})
         outcome = 'succeeded'
     except Interrupted:
         outcome = 'interrupted'; reason = 'interrupted by signal'; report['execution'] = 'interrupted' if started else 'unchecked'; report['error'] = reason
         if started: finished = now()
     except Exception as exc:
         reason = type(exc).__name__ if isinstance(exc, OSError) else str(exc); report['error'] = reason
+        if reason in ('output fingerprint differs from reference', 'invalid output environment'):
+            report['runtime'] = 'failed'
         if started:
             if report['execution'] != 'succeeded':
                 report['execution'] = 'failed'
             if finished is None: finished = now()
-        elif report['materials'] == 'verified': report['runtime'] = 'failed'
+        elif report['materials'] == 'verified' and report['runtime_preflight'] != 'passed':
+            report['runtime_preflight'] = 'failed'; report['runtime'] = 'failed'
         elif plan is not None: report['materials'] = 'failed'
+    report['outcome'] = outcome
     if plan is not None:
         body = {'snapshot_id':plan['snapshot_id'], 'source_run_id':source, 'started_at':started, 'finished_at':finished,
                 'outcome':outcome, 'reason':None if outcome == 'succeeded' else (reason or 'repeat failed'),
@@ -242,7 +247,7 @@ def repeat(binary, store, source, python, work):
     return report
 
 def exit_status(report):
-    return 0 if (report['materials'], report['runtime'], report['execution'], report['registration'], report['numerical']) == ('verified', 'passed', 'succeeded', 'confirmed', 'pass') else 1
+    return 0 if (report['materials'], report['runtime'], report['execution'], report['registration'], report['numerical'], report['outcome']) == ('verified', 'passed', 'succeeded', 'confirmed', 'pass', 'succeeded') else 1
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

@@ -34,14 +34,27 @@ def main():
     if mode != 'validate' or len(rest) != 2:
         raise ValueError('invalid helper mode')
     output, original = map(Path, rest)
-    _, metrics, actual, _ = module.validate_output(root, output, rows, split)
+    result_bytes = (output / 'result.json').read_bytes()
+    try:
+        _, metrics, actual, _ = module.validate_output(root, output, rows, split)
+    except module.InvalidEnvironment as exc:
+        raise ValueError('invalid output environment') from exc
     if not module.strict_equal(actual, source_env):
         raise ValueError('output fingerprint differs from reference')
     record = module.read(output / 'result.json')
     if record['phase'] != 'validation':
         raise ValueError('invalid execution phase')
+    if (output / 'result.json').read_bytes() != result_bytes:
+        raise ValueError('result changed during validation')
+    refs = {}
+    for name in ('result.json', 'predictions.csv', 'metrics.json', 'model.json', 'environment.json'):
+        data = result_bytes if name == 'result.json' else (output / name).read_bytes()
+        digest = hashlib.sha256(data).hexdigest()
+        if name != 'result.json' and record['outputs'][name] != digest:
+            raise ValueError('output changed during validation')
+        refs[name] = {'algorithm': 'sha256', 'digest': digest, 'size': len(data)}
     comparison = module.compare(root, original, root, output) if original.is_dir() else {'numerical': 'unchecked'}
-    return {'environment': actual, 'metrics': metrics, 'record': record, 'comparison': comparison}
+    return {'environment': actual, 'metrics': metrics, 'record': record, 'comparison': comparison, 'output_refs': refs}
 
 if __name__ == '__main__':
     try:

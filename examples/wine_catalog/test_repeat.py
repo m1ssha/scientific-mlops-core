@@ -1,4 +1,5 @@
 import json
+import hashlib
 import os
 import shutil
 import subprocess
@@ -173,6 +174,39 @@ assert children and children[0].poll() is not None
         self.assertEqual(self.get_run(r)['outcome'],'failed');self.assertFalse((self.work/'result').exists())
 
     @unittest.skipUnless(os.environ.get('WINE_WHEELHOUSE'), 'locked wheels not supplied')
+    def test_post_fingerprint_mismatch_is_runtime_failure(self):
+        original=repeat.execute
+        def mismatch(argv,env=None,on_start=None):
+            if 'validate' in argv and repeat.HELPER in argv:
+                environment = self.work/'result/environment.json'
+                changed = json.loads(environment.read_text()); changed['libc'][1] = 'different'
+                environment.write_text(json.dumps(changed))
+                record_path = self.work/'result/result.json'; record = json.loads(record_path.read_text())
+                record['outputs']['environment.json'] = hashlib.sha256(environment.read_bytes()).hexdigest()
+                record_path.write_text(json.dumps(record))
+            return original(argv,env,on_start)
+        with mock.patch.object(repeat,'execute',side_effect=mismatch): r=self.invoke()
+        if r['runtime']=='failed' and 'runtime fingerprint differs' in (r['error'] or ''):
+            self.skipTest('host differs from historical environment')
+        self.assertEqual(r['runtime'],'failed',r); self.assertEqual(r['execution'],'failed')
+        self.assertEqual(self.get_run(r)['outcome'],'failed'); self.assertEqual(repeat.exit_status(r),1)
+
+    @unittest.skipUnless(os.environ.get('WINE_WHEELHOUSE'), 'locked wheels not supplied')
+    def test_output_changed_after_validation_cannot_be_registered_as_success(self):
+        original=repeat.execute
+        def drift(argv,env=None,on_start=None):
+            result=original(argv,env,on_start)
+            if 'validate' in argv and repeat.HELPER in argv:
+                (self.work/'result/metrics.json').write_bytes(b'changed after validation')
+            return result
+        with mock.patch.object(repeat,'execute',side_effect=drift): r=self.invoke()
+        if r['runtime']=='failed' and 'runtime fingerprint differs' in (r['error'] or ''):
+            self.skipTest('host differs from historical environment')
+        self.assertEqual(r['registration'],'confirmed',r); run=self.get_run(r)
+        self.assertEqual(run['outcome'],'failed'); self.assertEqual(run['outputs'],[]); self.assertEqual(run['metrics'],{})
+        self.assertEqual(repeat.exit_status(r),1)
+
+    @unittest.skipUnless(os.environ.get('WINE_WHEELHOUSE'), 'locked wheels not supplied')
     def test_process_failure_and_interrupt(self):
         original=repeat.execute
         for exc,expected in ((ValueError('test process failure'),'failed'),(repeat.Interrupted(),'interrupted')):
@@ -185,4 +219,4 @@ assert children and children[0].poll() is not None
                 with mock.patch.object(repeat,'execute',side_effect=stop): r=self.invoke()
                 if r['runtime']=='failed' and 'fingerprint differs' in (r['error'] or ''):
                     self.skipTest('host differs from historical environment')
-                self.assertEqual(r['execution'],expected,r);run=self.get_run(r);self.assertEqual(run['outcome'],expected);self.assertIsNotNone(run['started_at']);self.assertEqual(run['metrics'],{});self.assertEqual(run['outputs'],[])
+                self.assertEqual(r['execution'],expected,r);self.assertEqual(r['runtime_preflight'],'passed');self.assertEqual(r['runtime'],'unchecked');run=self.get_run(r);self.assertEqual(run['outcome'],expected);self.assertIsNotNone(run['started_at']);self.assertEqual(run['metrics'],{});self.assertEqual(run['outputs'],[])
