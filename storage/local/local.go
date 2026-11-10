@@ -14,7 +14,10 @@ import (
 	"github.com/m1ssha/scientific-mlops-core/object"
 )
 
-type Store struct{ root string }
+type Store struct {
+	root     string
+	readOnly bool
+}
 
 func storage(err error) error { return fmt.Errorf("%w: %w", object.ErrStorage, err) }
 func dir(path string) error {
@@ -55,6 +58,40 @@ func New(root string) (*Store, error) {
 	}
 	return s, nil
 }
+
+// OpenReadOnly configures verification without creating or repairing a layout.
+func OpenReadOnly(root string) (*Store, error) {
+	if root == "" {
+		return nil, fmt.Errorf("%w: empty root", object.ErrInvalidRef)
+	}
+	abs, err := filepath.Abs(root)
+	if err != nil {
+		return nil, storage(err)
+	}
+	return &Store{root: abs, readOnly: true}, nil
+}
+
+// readLayout inspects each component and treats absent object directories as
+// missing objects. A malformed or inaccessible directory is a storage error.
+func (s *Store) readLayout() error {
+	current := string(filepath.Separator)
+	parts := append(split(s.root), "objects", "sha256")
+	for _, part := range parts {
+		current = filepath.Join(current, part)
+		info, err := os.Lstat(current)
+		if errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("%w: %s", object.ErrNotFound, current)
+		}
+		if err != nil {
+			return storage(err)
+		}
+		if !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
+			return storage(fmt.Errorf("unsafe directory %q", current))
+		}
+	}
+	return nil
+}
+
 func split(path string) []string {
 	var parts []string
 	for path != string(filepath.Separator) && path != "." {
@@ -111,7 +148,11 @@ func (s *Store) open(ctx context.Context, ref object.Ref) (*os.File, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	if err := s.layout(); err != nil {
+	if s.readOnly {
+		if err := s.readLayout(); err != nil {
+			return nil, err
+		}
+	} else if err := s.layout(); err != nil {
 		return nil, err
 	}
 	path := s.path(ref)
@@ -178,6 +219,9 @@ func (s *Store) Open(ctx context.Context, ref object.Ref) (io.ReadCloser, error)
 }
 func (s *Store) Put(ctx context.Context, ref object.Ref, reader io.Reader) (object.Ref, error) {
 	var zero object.Ref
+	if s.readOnly {
+		return zero, storage(errors.New("read-only object store"))
+	}
 	if err := ref.Validate(); err != nil {
 		return zero, err
 	}

@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 
@@ -320,5 +321,23 @@ func TestReaderErrorAfterData(t *testing.T) {
 				t.Fatalf("unexpected publication: %v", e)
 			}
 		})
+	}
+}
+
+func TestReadOnlyDoesNotCreateLayout(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "absent")
+	store, err := OpenReadOnly(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ref := object.Ref{Algorithm: "sha256", Digest: strings.Repeat("0", 64), Size: 0}
+	if err = store.Verify(context.Background(), ref); !errors.Is(err, object.ErrNotFound) {
+		t.Fatal(err)
+	}
+	if _, err = os.Stat(root); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("created root: %v", err)
+	}
+	if _, err = store.Put(context.Background(), ref, strings.NewReader("")); !errors.Is(err, object.ErrStorage) {
+		t.Fatal(err)
 	}
 }

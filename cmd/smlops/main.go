@@ -62,6 +62,9 @@ func classify(err error) string {
 	}
 }
 func run(args []string) int {
+	if len(args) > 0 && args[0] == "recovery" {
+		return runRecovery(args[1:])
+	}
 	if len(args) > 0 && args[0] != "object" {
 		return runCatalog(args)
 	}

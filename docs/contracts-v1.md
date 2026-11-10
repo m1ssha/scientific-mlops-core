@@ -3,7 +3,7 @@
 Проект от 2026-11-09 для Issue #2. Документ описывает целевой контракт,
 часть которого реализована в прототипе каталога datasets, snapshots и runs. Доступные команды
 и ограничения перечислены в [README](../README.md#каталог-версий-данных);
-сравнение реализовано, восстановление остаётся проектируемым.
+сравнение и построение плана восстановления реализованы.
 ADR 0003-0009 остаются proposed. Принятие существенных решений требует
 независимого ревью и явного согласия сопровождающего проект.
 
@@ -252,9 +252,9 @@ limit - положительный int64; ответ имеет view_sequence и
 
 Пакет catalog реализует срез dataset, snapshot, run и ссылок; актуальную поверхность см. в
 [README](../README.md#каталог-версий-данных) и Go-коде. Следующая целевая
-поверхность включает Diff и ещё не реализованный RecoveryPlan. Имя Go поля - PascalCase
+поверхность включает Diff и RecoveryPlan. Имя Go поля - PascalCase
 соответствующего snake_case, ID/JSON сохраняют общепринятые аббревиатуры.
-Целевая поверхность Service (включает будущие методы):
+Поверхность Service:
 
 ```go
 PublishDataset(context.Context, Command) (Receipt, error)
@@ -298,8 +298,8 @@ smlops recovery plan --store DIR --run ID
 ```
 
 В этом списке реализованы repository init/show, dataset publish/show/list,
-snapshot create/show/list, run register/show/list, ref set/show и operation show;
-diff реализован; recovery остаётся будущим.
+snapshot create/show/list, run register/show/list, ref set/show, operation show,
+diff и recovery plan.
 FILE - Command JSON без угадываемых ID/CAS по текущему
 имени. Объекты загружаются отдельной object put. init возвращает
 {schema_version,repository_id,sequence:0}; остальные success - Receipt либо
@@ -371,7 +371,7 @@ PlanMaterial: {key,path,purpose,required,source,check,checked_at,detail}.
 Dataset-файлы разворачиваются в отдельные элементы с purpose=input;
 snapshot материалы сохраняют purpose/required, исходные outputs добавляются
 с purpose=original_output и required=false. key - стабильный уникальный
-идентификатор элемента в плане. Check: verified/missing/corrupt/unchecked/io_error.
+идентификатор элемента в плане: компоненты роли, имени и пути кодируются отдельно в формате URL query escaping, а типы разделяются двоеточием. Check: verified/missing/corrupt/unchecked/io_error.
 verified требует полного чтения размера/хеша; checked_at обязателен кроме
 unchecked (там null). Для external всегда unchecked, даже при expected_object:
 наличие локальных байтов по похожей ссылке не заменяет внешний источник молча.
