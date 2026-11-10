@@ -17,7 +17,18 @@ REFERENCE = WINE / 'evidence/main-v1/reference/result'
 EVIDENCE = HERE / 'evidence/issue20'
 
 
+def full_cycle_enabled(environ):
+    return environ.get('WINE_FULL_CYCLE') == '1'
+
+
 class OracleTests(unittest.TestCase):
+    def test_full_cycle_requires_explicit_opt_in(self):
+        supplied = {'WINE_WHEELHOUSE': '/wheels', 'WINE_PYTHON': '/python'}
+        self.assertFalse(full_cycle_enabled(supplied))
+        self.assertFalse(full_cycle_enabled({**supplied, 'WINE_FULL_CYCLE': '0'}))
+        self.assertTrue(full_cycle_enabled({**supplied, 'WINE_FULL_CYCLE': '1'}))
+
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
@@ -116,7 +127,7 @@ class OracleTests(unittest.TestCase):
         self.assertTrue(load('restored-plan.json')['stored_materials_ready'])
 
 
-@unittest.skipUnless(os.environ.get('WINE_WHEELHOUSE') and os.environ.get('WINE_PYTHON'), 'WINE_WHEELHOUSE and WINE_PYTHON required')
+@unittest.skipUnless(full_cycle_enabled(os.environ), 'set WINE_FULL_CYCLE=1 for the historical full cycle')
 class FullCycleTests(unittest.TestCase):
     def test_full_cycle(self):
         with tempfile.TemporaryDirectory() as tmp:
