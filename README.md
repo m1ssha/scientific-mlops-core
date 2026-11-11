@@ -137,9 +137,10 @@ Go API записи изменился: поле `Record.Body` теперь со
 - [Архитектура](docs/architecture.md), [компоненты](docs/components.md) и [схема](docs/component-map.svg).
 - [Предлагаемые архитектурные решения](docs/adr/README.md) - ADR остаются в статусе proposed.
 - [Проверка интеграции и следующая очередь](docs/integration-validation.md).
+- [Итоговая проверка локального MVP](docs/mvp-validation.md), [план оценки](docs/evaluation-plan.md) и [демонстрация из чистых копий](docs/demo.md).
 - [Дизайн Wine-эксперимента](docs/wine-experiment-design.md) и [результаты с независимым ревью](examples/wine/evidence/REPORT.md). Локальные повторы не подтверждают переносимость или обобщающую способность модели.
 
-[Scientific MLOps Platform](https://github.com/m1ssha/scientific-mlops-platform) - отдельный проект пользовательского интерфейса и API поверх ядра; его реализация отложена.
+[Scientific MLOps Platform](https://github.com/m1ssha/scientific-mlops-platform) - отдельный локальный прототип API и веб-интерфейса поверх ядра. Он предоставляет просмотр истории, сравнения и плана восстановления в режиме только для чтения.
 
 Исходный запуск Wine можно импортировать в каталог внешним мостом: см. [инструкцию](examples/wine_catalog/README.md).
 
