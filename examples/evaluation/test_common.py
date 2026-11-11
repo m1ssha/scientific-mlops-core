@@ -239,10 +239,14 @@ class TestEventFDAnnotation(unittest.TestCase):
   mixed=classify(complete('1 sendfile(5<'+label+'>, 7<socket:[123]>, NULL, 1) = 1'))
   self.assertEqual(mixed['status'],'unchecked');self.assertIsNone(attribute_unknowns(mixed,'/bin/test'))
  def test_real_os_eventfd_under_strace(self):
-  import shutil,subprocess,sys
+  import re,shutil,subprocess,sys
+  from trace import known_eventfd
   if not shutil.which('strace') or not hasattr(__import__('os'),'eventfd'):self.skipTest('Linux eventfd/strace unavailable')
   with tempfile.TemporaryDirectory() as tmp:
    path=Path(tmp)/'trace';script='import os,struct;f=os.eventfd(0,0);os.write(f,struct.pack("Q",1));os.write(f,struct.pack("Q",1));os.close(f)'
    result=subprocess.run(['strace','-f','-ttt','-yy','-s','4096','-e','trace=network,process,write,writev,sendfile,splice','-o',str(path),sys.executable,'-c',script],capture_output=True)
-   self.assertEqual(result.returncode,0);text=path.read_text();self.assertIn('eventfd-count=',text)
+   self.assertEqual(result.returncode,0);text=path.read_text()
+   labels=re.findall(r'\bwrite\(\d+<([^>]+)>',text)
+   eventfd_writes=[label for label in labels if label=='anon_inode:[eventfd]' or known_eventfd(label)]
+   self.assertGreaterEqual(len(eventfd_writes),2,'both actual eventfd writes must have a recognized annotation')
    observation=classify(text);self.assertEqual(observation['status'],'pass',observation['unknown'])
