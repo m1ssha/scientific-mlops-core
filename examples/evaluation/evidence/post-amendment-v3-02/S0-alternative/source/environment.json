@@ -1,0 +1,55 @@
+{
+  "backends": [
+    {
+      "architecture": "Haswell",
+      "basename": "libscipy_openblas-5f890258.so",
+      "internal_api": "openblas",
+      "num_threads": 1,
+      "sha256": "2a5b4c1a6311873c59132b2ceaaf3c26258a17350b7cd27ea8782a47e3322981",
+      "threading_layer": "pthreads",
+      "version": "0.3.31.dev"
+    },
+    {
+      "architecture": "Haswell",
+      "basename": "libscipy_openblas64_-f48b354e.so",
+      "internal_api": "openblas",
+      "num_threads": 1,
+      "sha256": "432e1c1739731468ba305771af96773939e43016643e2d630f58cb45b6670e96",
+      "threading_layer": "pthreads",
+      "version": "0.3.34.106.0"
+    },
+    {
+      "architecture": null,
+      "basename": "libgomp-e985bcbb.so.1.0.0",
+      "internal_api": "openmp",
+      "num_threads": 1,
+      "sha256": "a43904e4fa297301d4640dc1bb3c8a3480b406f99e498eba9b1914b68aab604a",
+      "threading_layer": null,
+      "version": null
+    }
+  ],
+  "libc": [
+    "glibc",
+    "2.43"
+  ],
+  "lock_sha256": "074a34a6da4618dbcf50315add680a8e7693670d97593abf61872d0dadc58e10",
+  "machine": "x86_64",
+  "packages": {
+    "cloudpickle": "3.1.2",
+    "joblib": "1.6.0",
+    "narwhals": "2.28.0",
+    "numpy": "2.5.4",
+    "scikit-learn": "1.9.1",
+    "scipy": "1.18.1",
+    "threadpoolctl": "3.8.0"
+  },
+  "python_implementation": "CPython",
+  "python_version": "3.12.15",
+  "system": "Linux",
+  "threads": {
+    "BLIS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1"
+  }
+}

@@ -1,0 +1,2018 @@
+{
+  "cases": [
+    {
+      "attempt_id": "5417f2ecd8864642b43426bb3c346c15",
+      "attributed_unknowns": [
+        {
+          "kind": "unknown_syscall",
+          "pid": 1407049,
+          "root_pid": 1407048,
+          "sequence": 1880
+        },
+        {
+          "kind": "unknown_syscall",
+          "pid": 1407105,
+          "root_pid": 1407104,
+          "sequence": 2110
+        }
+      ],
+      "case": "S0",
+      "common_checks": [
+        {
+          "key": "input:data:wine.data",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:README.md",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:config.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:data%2FSOURCE.md",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:manifest.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:pipeline.py",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:prepare_split.py",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:protocol.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:reference-environment",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:requirements.lock",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:split.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:test_pipeline.py",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3A1f69d6385ec30e2fa6e1fdeb37c562ecabd0f713f6f3e3b58a668c5c9df9567f",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3A3dbbf9f6e4b592a2357b854608e980fe6390d131d7a82f011a377ef2ebef7aba",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3A9acb47f6afd73f60dc1df93bb801b472f05ff42fa6c84167d25cb206be1fbf4a",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Ae5d7b18a5b9dca241a74695f3275fa4c895a9dadc72b3d8df5fa9d1083c9b83e",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Af1b49c82704d50f13ffae019c727b0fa4f6791a58f48f06a09c45face1be66da",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Af55fa87b6c612ecd6b058f167c53231b1d14e412efe361d3d6e38b3631c73218",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Afbde6962867ee75b48b0ee29b2b9372ec5d617799dbaf38e82dc0596f2f7738a",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "output:reference%2Fenvironment.json",
+          "required": false,
+          "status": "verified"
+        },
+        {
+          "key": "output:reference%2Fmetrics.json",
+          "required": false,
+          "status": "verified"
+        },
+        {
+          "key": "output:reference%2Fmodel.json",
+          "required": false,
+          "status": "verified"
+        },
+        {
+          "key": "output:reference%2Fpredictions.csv",
+          "required": false,
+          "status": "verified"
+        },
+        {
+          "key": "output:reference%2Fresult.json",
+          "required": false,
+          "status": "verified"
+        }
+      ],
+      "core_run_id": "63f1f95702d5981495181cb4b07a3545",
+      "current_snapshot_id": "57543d38d1eb0888089af9f638239788",
+      "execution": "succeeded",
+      "functional_assumption": "post-amendment-v3: byte-checked, source-audited non-spawning CLI leaf process with a complete temporally ordered thread group; network remains unchecked",
+      "functional_status": "passed",
+      "history_unchanged": true,
+      "materials": "verified",
+      "mutation_proof": null,
+      "native_blockers": [],
+      "native_diagnostic": null,
+      "native_exit": 0,
+      "native_material_checks": [
+        {
+          "check": "verified",
+          "key": "input:data:wine.data",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:README.md",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:config.json",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:data%2FSOURCE.md",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:manifest.json",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:pipeline.py",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:prepare_split.py",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:protocol.json",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:reference-environment",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:requirements.lock",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:split.json",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:test_pipeline.py",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3A1f69d6385ec30e2fa6e1fdeb37c562ecabd0f713f6f3e3b58a668c5c9df9567f",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3A3dbbf9f6e4b592a2357b854608e980fe6390d131d7a82f011a377ef2ebef7aba",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3A9acb47f6afd73f60dc1df93bb801b472f05ff42fa6c84167d25cb206be1fbf4a",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3Ae5d7b18a5b9dca241a74695f3275fa4c895a9dadc72b3d8df5fa9d1083c9b83e",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3Af1b49c82704d50f13ffae019c727b0fa4f6791a58f48f06a09c45face1be66da",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3Af55fa87b6c612ecd6b058f167c53231b1d14e412efe361d3d6e38b3631c73218",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3Afbde6962867ee75b48b0ee29b2b9372ec5d617799dbaf38e82dc0596f2f7738a",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "output:reference%2Fenvironment.json",
+          "required": false
+        },
+        {
+          "check": "verified",
+          "key": "output:reference%2Fmetrics.json",
+          "required": false
+        },
+        {
+          "check": "verified",
+          "key": "output:reference%2Fmodel.json",
+          "required": false
+        },
+        {
+          "check": "verified",
+          "key": "output:reference%2Fpredictions.csv",
+          "required": false
+        },
+        {
+          "check": "verified",
+          "key": "output:reference%2Fresult.json",
+          "required": false
+        }
+      ],
+      "network_status": "unchecked",
+      "numerical": "pass",
+      "oracle": {
+        "predictions_equal": true,
+        "schema_version": 1,
+        "scores": {
+          "dummy": {
+            "accuracy": {
+              "denominator": 5,
+              "numerator": 2,
+              "value": 0.4
+            },
+            "balanced_accuracy": {
+              "denominator": 3,
+              "numerator": 1,
+              "value": 0.3333333333333333
+            },
+            "confusion_matrix": [
+              [
+                0,
+                15,
+                0
+              ],
+              [
+                0,
+                18,
+                0
+              ],
+              [
+                0,
+                12,
+                0
+              ]
+            ],
+            "correct": 18,
+            "n": 45,
+            "support": [
+              15,
+              18,
+              12
+            ]
+          },
+          "model": {
+            "accuracy": {
+              "denominator": 1,
+              "numerator": 1,
+              "value": 1.0
+            },
+            "balanced_accuracy": {
+              "denominator": 1,
+              "numerator": 1,
+              "value": 1.0
+            },
+            "confusion_matrix": [
+              [
+                15,
+                0,
+                0
+              ],
+              [
+                0,
+                18,
+                0
+              ],
+              [
+                0,
+                0,
+                12
+              ]
+            ],
+            "correct": 45,
+            "n": 45,
+            "support": [
+              15,
+              18,
+              12
+            ]
+          }
+        },
+        "status": "pass",
+        "test_rows": 45
+      },
+      "private_log_hashes": {
+        "commands": {
+          "sha256": "a6db59477e0dbd16a545a560ac19f1285af76e7f00b39ae199f98ccb4140793a",
+          "size": 54301
+        },
+        "trace": {
+          "sha256": "ebf43c055a2c9f9ff1aae0b1d01590b0c9a827b285c5f3d01073354489e76489",
+          "size": 61613934
+        }
+      },
+      "registration": "confirmed",
+      "runtime": "passed",
+      "source_run_id": "87d5bc581e5c93e773544e8af446fdf3",
+      "source_snapshot_id": "29edc1740cce0f6d5356348608153754",
+      "system": "core",
+      "training_process_count": 1,
+      "training_processes": [
+        {
+          "ended_unix": "1794401827.450046",
+          "pid": 1409263,
+          "started_unix": "1794401825.814355"
+        }
+      ],
+      "wine_uuids": {
+        "repeat": "49d2b54c-9134-4f49-a44b-df45c17c4c44",
+        "source": "9b54bad3-2fca-47b6-a675-166d2f0042e6"
+      }
+    },
+    {
+      "attempt_id": "99d723e12b4d46a4925280d956f8af48",
+      "attributed_unknowns": [
+        {
+          "kind": "unknown_syscall",
+          "pid": 1410109,
+          "root_pid": 1410103,
+          "sequence": 2166
+        },
+        {
+          "kind": "unknown_syscall",
+          "pid": 1410127,
+          "root_pid": 1410122,
+          "sequence": 2213
+        }
+      ],
+      "c1_revision": "c434f7284a7d69b9d52707edbeee7315f4d48856",
+      "c2_revision": "76b20d1332cebbe6fb107dfcfe0877c38dbda056",
+      "case": "S0",
+      "common_checks": [
+        {
+          "key": "input:data:wine.data",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:README.md",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:config.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:data%2FSOURCE.md",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:manifest.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:pipeline.py",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:prepare_split.py",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:protocol.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:reference-environment",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:requirements.lock",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:split.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:test_pipeline.py",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3A1f69d6385ec30e2fa6e1fdeb37c562ecabd0f713f6f3e3b58a668c5c9df9567f",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3A3dbbf9f6e4b592a2357b854608e980fe6390d131d7a82f011a377ef2ebef7aba",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3A9acb47f6afd73f60dc1df93bb801b472f05ff42fa6c84167d25cb206be1fbf4a",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Ae5d7b18a5b9dca241a74695f3275fa4c895a9dadc72b3d8df5fa9d1083c9b83e",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Af1b49c82704d50f13ffae019c727b0fa4f6791a58f48f06a09c45face1be66da",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Af55fa87b6c612ecd6b058f167c53231b1d14e412efe361d3d6e38b3631c73218",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Afbde6962867ee75b48b0ee29b2b9372ec5d617799dbaf38e82dc0596f2f7738a",
+          "required": true,
+          "status": "verified"
+        }
+      ],
+      "dvc_experiment": {
+        "commit": "9d4a41e46c16b90d14074399708ba1bf9f5916da",
+        "ref": "refs/exps/c4/34f7284a7d69b9d52707edbeee7315f4d48856/99d723e12b4d46a4925280d956f8af48"
+      },
+      "execution": "succeeded",
+      "functional_assumption": "post-amendment-v3: byte-checked, source-audited non-spawning CLI leaf process with a complete temporally ordered thread group; network remains unchecked",
+      "functional_status": "passed",
+      "history_unchanged": true,
+      "materials": "verified",
+      "mlflow_run_id": "2d51f2812ca648649d1b66a3cf8b42aa",
+      "mutation_proof": null,
+      "native_exit": 0,
+      "network_status": "unchecked",
+      "numerical": "pass",
+      "oracle": {
+        "predictions_equal": true,
+        "schema_version": 1,
+        "scores": {
+          "dummy": {
+            "accuracy": {
+              "denominator": 5,
+              "numerator": 2,
+              "value": 0.4
+            },
+            "balanced_accuracy": {
+              "denominator": 3,
+              "numerator": 1,
+              "value": 0.3333333333333333
+            },
+            "confusion_matrix": [
+              [
+                0,
+                15,
+                0
+              ],
+              [
+                0,
+                18,
+                0
+              ],
+              [
+                0,
+                12,
+                0
+              ]
+            ],
+            "correct": 18,
+            "n": 45,
+            "support": [
+              15,
+              18,
+              12
+            ]
+          },
+          "model": {
+            "accuracy": {
+              "denominator": 1,
+              "numerator": 1,
+              "value": 1.0
+            },
+            "balanced_accuracy": {
+              "denominator": 1,
+              "numerator": 1,
+              "value": 1.0
+            },
+            "confusion_matrix": [
+              [
+                15,
+                0,
+                0
+              ],
+              [
+                0,
+                18,
+                0
+              ],
+              [
+                0,
+                0,
+                12
+              ]
+            ],
+            "correct": 45,
+            "n": 45,
+            "support": [
+              15,
+              18,
+              12
+            ]
+          }
+        },
+        "status": "pass",
+        "test_rows": 45
+      },
+      "private_log_hashes": {
+        "commands": {
+          "sha256": "8365a779a56204f659ebb4397605384f1bd6e83b83b5c171a59de190a554c856",
+          "size": 137569
+        },
+        "trace": {
+          "sha256": "2ab0edb3033c03d45ff30c1c87190514f054423f0f9f7d4eb9b8089d53b7c2b5",
+          "size": 78939336
+        }
+      },
+      "registration": "confirmed",
+      "runtime": "passed",
+      "source_run_id": "47fe294d80c74be4b1786cb7abc63ac3",
+      "system": "alternative",
+      "training_process_count": 1,
+      "training_processes": [
+        {
+          "ended_unix": "1794401876.088470",
+          "pid": 1413033,
+          "started_unix": "1794401874.032743"
+        }
+      ],
+      "wine_uuids": {
+        "repeat": "778668f8-d62d-4abf-b4ef-1d7e075988ce",
+        "source": "9b54bad3-2fca-47b6-a675-166d2f0042e6"
+      }
+    },
+    {
+      "attempt_id": "aff899d586c94589901a8e1b679f5306",
+      "attributed_unknowns": [
+        {
+          "kind": "unknown_syscall",
+          "pid": 1415909,
+          "root_pid": 1415908,
+          "sequence": 4837
+        },
+        {
+          "kind": "unknown_syscall",
+          "pid": 1415917,
+          "root_pid": 1415916,
+          "sequence": 4871
+        }
+      ],
+      "case": "S1",
+      "common_checks": [
+        {
+          "key": "input:data:wine.data",
+          "required": true,
+          "status": "missing"
+        },
+        {
+          "key": "material:README.md",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:config.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:data%2FSOURCE.md",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:manifest.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:pipeline.py",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:prepare_split.py",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:protocol.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:reference-environment",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:requirements.lock",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:split.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:test_pipeline.py",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3A1f69d6385ec30e2fa6e1fdeb37c562ecabd0f713f6f3e3b58a668c5c9df9567f",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3A3dbbf9f6e4b592a2357b854608e980fe6390d131d7a82f011a377ef2ebef7aba",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3A9acb47f6afd73f60dc1df93bb801b472f05ff42fa6c84167d25cb206be1fbf4a",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Ae5d7b18a5b9dca241a74695f3275fa4c895a9dadc72b3d8df5fa9d1083c9b83e",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Af1b49c82704d50f13ffae019c727b0fa4f6791a58f48f06a09c45face1be66da",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Af55fa87b6c612ecd6b058f167c53231b1d14e412efe361d3d6e38b3631c73218",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Afbde6962867ee75b48b0ee29b2b9372ec5d617799dbaf38e82dc0596f2f7738a",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "output:reference%2Fenvironment.json",
+          "required": false,
+          "status": "verified"
+        },
+        {
+          "key": "output:reference%2Fmetrics.json",
+          "required": false,
+          "status": "verified"
+        },
+        {
+          "key": "output:reference%2Fmodel.json",
+          "required": false,
+          "status": "verified"
+        },
+        {
+          "key": "output:reference%2Fpredictions.csv",
+          "required": false,
+          "status": "verified"
+        },
+        {
+          "key": "output:reference%2Fresult.json",
+          "required": false,
+          "status": "verified"
+        }
+      ],
+      "core_run_id": "8d1bdf1c8f27860171eae8f6f53db211",
+      "current_snapshot_id": "3afeeebe9565a976b8e867aeaa2f9fea",
+      "execution": "unchecked",
+      "functional_assumption": "post-amendment-v3: byte-checked, source-audited non-spawning CLI leaf process with a complete temporally ordered thread group; network remains unchecked",
+      "functional_status": "passed",
+      "history_unchanged": true,
+      "materials": "failed",
+      "mutation_proof": {
+        "state": "missing"
+      },
+      "native_blockers": [
+        {
+          "code": "missing",
+          "material_key": "input:data:wine.data"
+        }
+      ],
+      "native_diagnostic": "required materials unavailable",
+      "native_exit": 1,
+      "native_material_checks": [
+        {
+          "check": "missing",
+          "key": "input:data:wine.data",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:README.md",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:config.json",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:data%2FSOURCE.md",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:manifest.json",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:pipeline.py",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:prepare_split.py",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:protocol.json",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:reference-environment",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:requirements.lock",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:split.json",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:test_pipeline.py",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3A1f69d6385ec30e2fa6e1fdeb37c562ecabd0f713f6f3e3b58a668c5c9df9567f",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3A3dbbf9f6e4b592a2357b854608e980fe6390d131d7a82f011a377ef2ebef7aba",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3A9acb47f6afd73f60dc1df93bb801b472f05ff42fa6c84167d25cb206be1fbf4a",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3Ae5d7b18a5b9dca241a74695f3275fa4c895a9dadc72b3d8df5fa9d1083c9b83e",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3Af1b49c82704d50f13ffae019c727b0fa4f6791a58f48f06a09c45face1be66da",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3Af55fa87b6c612ecd6b058f167c53231b1d14e412efe361d3d6e38b3631c73218",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3Afbde6962867ee75b48b0ee29b2b9372ec5d617799dbaf38e82dc0596f2f7738a",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "output:reference%2Fenvironment.json",
+          "required": false
+        },
+        {
+          "check": "verified",
+          "key": "output:reference%2Fmetrics.json",
+          "required": false
+        },
+        {
+          "check": "verified",
+          "key": "output:reference%2Fmodel.json",
+          "required": false
+        },
+        {
+          "check": "verified",
+          "key": "output:reference%2Fpredictions.csv",
+          "required": false
+        },
+        {
+          "check": "verified",
+          "key": "output:reference%2Fresult.json",
+          "required": false
+        }
+      ],
+      "network_status": "unchecked",
+      "numerical": "unchecked",
+      "oracle": null,
+      "private_log_hashes": {
+        "commands": {
+          "sha256": "0da630d943f24e344584d4244d48234621f2af6a9f79540c90275df119029d6d",
+          "size": 54301
+        },
+        "trace": {
+          "sha256": "ab3cfa3db2abe0e8f39f3cac935b49dc595949d177caf6e64c14018a308ee549",
+          "size": 30756588
+        }
+      },
+      "registration": "confirmed",
+      "runtime": "unchecked",
+      "source_run_id": "575c83667152edea0c19b32ffc51e2dd",
+      "source_snapshot_id": "3e2d140a4dca02c46a62c7bae5287fc9",
+      "system": "core",
+      "training_process_count": 0,
+      "training_processes": [],
+      "wine_uuids": null
+    },
+    {
+      "attempt_id": "89f9f7860a18469a959c7e108d3b2fbf",
+      "attributed_unknowns": [
+        {
+          "kind": "unknown_syscall",
+          "pid": 1417023,
+          "root_pid": 1417018,
+          "sequence": 2176
+        }
+      ],
+      "c1_revision": "ebea9d728694cecafa40959cf11b4a467e58f7d8",
+      "c2_revision": "b35923cbdb2bc0772148febaee6a8786603ba421",
+      "case": "S1",
+      "common_checks": [
+        {
+          "key": "input:data:wine.data",
+          "required": true,
+          "status": "missing"
+        },
+        {
+          "key": "material:README.md",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:config.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:data%2FSOURCE.md",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:manifest.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:pipeline.py",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:prepare_split.py",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:protocol.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:reference-environment",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:requirements.lock",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:split.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:test_pipeline.py",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3A1f69d6385ec30e2fa6e1fdeb37c562ecabd0f713f6f3e3b58a668c5c9df9567f",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3A3dbbf9f6e4b592a2357b854608e980fe6390d131d7a82f011a377ef2ebef7aba",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3A9acb47f6afd73f60dc1df93bb801b472f05ff42fa6c84167d25cb206be1fbf4a",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Ae5d7b18a5b9dca241a74695f3275fa4c895a9dadc72b3d8df5fa9d1083c9b83e",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Af1b49c82704d50f13ffae019c727b0fa4f6791a58f48f06a09c45face1be66da",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Af55fa87b6c612ecd6b058f167c53231b1d14e412efe361d3d6e38b3631c73218",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Afbde6962867ee75b48b0ee29b2b9372ec5d617799dbaf38e82dc0596f2f7738a",
+          "required": true,
+          "status": "verified"
+        }
+      ],
+      "corruption_detection": null,
+      "diagnosis": "native pull failed; exact cause unclassified",
+      "dvc_experiment": null,
+      "execution": "unchecked",
+      "functional_assumption": "post-amendment-v3: byte-checked, source-audited non-spawning CLI leaf process with a complete temporally ordered thread group; network remains unchecked",
+      "functional_status": "passed",
+      "history_unchanged": true,
+      "materials": "missing",
+      "mlflow_run_id": "6f835f0b362b48fbba6b151150fb05c7",
+      "mutation_proof": {
+        "state": "missing"
+      },
+      "native_exit": 1,
+      "network_status": "unchecked",
+      "numerical": "unchecked",
+      "oracle": null,
+      "private_log_hashes": {
+        "commands": {
+          "sha256": "4a3a63cc62bd20a5801c1cfabc98a928be6082a772ddd083eefccf17424480b9",
+          "size": 120440
+        },
+        "trace": {
+          "sha256": "b020a612432832a4f0aef103795eafd3d5c8242ecebecdcf03b5126e14ccd060",
+          "size": 47271937
+        }
+      },
+      "registration": "confirmed",
+      "runtime": "unchecked",
+      "source_run_id": "1a6e808e068e4dc8acff8bddcef89188",
+      "system": "alternative",
+      "target_status": "missing",
+      "training_process_count": 0,
+      "training_processes": []
+    },
+    {
+      "attempt_id": "6e00276cb0524d7f9f1c905853650af8",
+      "attributed_unknowns": [],
+      "case": "S2",
+      "common_checks": [
+        {
+          "key": "input:data:wine.data",
+          "required": true,
+          "status": "corrupt"
+        },
+        {
+          "key": "material:README.md",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:config.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:data%2FSOURCE.md",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:manifest.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:pipeline.py",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:prepare_split.py",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:protocol.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:reference-environment",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:requirements.lock",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:split.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:test_pipeline.py",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3A1f69d6385ec30e2fa6e1fdeb37c562ecabd0f713f6f3e3b58a668c5c9df9567f",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3A3dbbf9f6e4b592a2357b854608e980fe6390d131d7a82f011a377ef2ebef7aba",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3A9acb47f6afd73f60dc1df93bb801b472f05ff42fa6c84167d25cb206be1fbf4a",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Ae5d7b18a5b9dca241a74695f3275fa4c895a9dadc72b3d8df5fa9d1083c9b83e",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Af1b49c82704d50f13ffae019c727b0fa4f6791a58f48f06a09c45face1be66da",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Af55fa87b6c612ecd6b058f167c53231b1d14e412efe361d3d6e38b3631c73218",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Afbde6962867ee75b48b0ee29b2b9372ec5d617799dbaf38e82dc0596f2f7738a",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "output:reference%2Fenvironment.json",
+          "required": false,
+          "status": "verified"
+        },
+        {
+          "key": "output:reference%2Fmetrics.json",
+          "required": false,
+          "status": "verified"
+        },
+        {
+          "key": "output:reference%2Fmodel.json",
+          "required": false,
+          "status": "verified"
+        },
+        {
+          "key": "output:reference%2Fpredictions.csv",
+          "required": false,
+          "status": "verified"
+        },
+        {
+          "key": "output:reference%2Fresult.json",
+          "required": false,
+          "status": "verified"
+        }
+      ],
+      "core_run_id": "b0259b7016c59271923110d576c1f724",
+      "current_snapshot_id": "6d23b9159ec28a390e0be6887a1f1d37",
+      "execution": "unchecked",
+      "functional_assumption": "post-amendment-v3: byte-checked, source-audited non-spawning CLI leaf process with a complete temporally ordered thread group; network remains unchecked",
+      "functional_status": "passed",
+      "history_unchanged": true,
+      "materials": "failed",
+      "mutation_proof": {
+        "sha256": "bd893782ef39cd49a95ae1ca8f002f7ae3419957cd8d8d1ffde0ae2e09782812",
+        "size": 10782,
+        "state": "corrupt"
+      },
+      "native_blockers": [
+        {
+          "code": "corrupt",
+          "material_key": "input:data:wine.data"
+        }
+      ],
+      "native_diagnostic": "required materials unavailable",
+      "native_exit": 1,
+      "native_material_checks": [
+        {
+          "check": "corrupt",
+          "key": "input:data:wine.data",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:README.md",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:config.json",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:data%2FSOURCE.md",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:manifest.json",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:pipeline.py",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:prepare_split.py",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:protocol.json",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:reference-environment",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:requirements.lock",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:split.json",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:test_pipeline.py",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3A1f69d6385ec30e2fa6e1fdeb37c562ecabd0f713f6f3e3b58a668c5c9df9567f",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3A3dbbf9f6e4b592a2357b854608e980fe6390d131d7a82f011a377ef2ebef7aba",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3A9acb47f6afd73f60dc1df93bb801b472f05ff42fa6c84167d25cb206be1fbf4a",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3Ae5d7b18a5b9dca241a74695f3275fa4c895a9dadc72b3d8df5fa9d1083c9b83e",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3Af1b49c82704d50f13ffae019c727b0fa4f6791a58f48f06a09c45face1be66da",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3Af55fa87b6c612ecd6b058f167c53231b1d14e412efe361d3d6e38b3631c73218",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3Afbde6962867ee75b48b0ee29b2b9372ec5d617799dbaf38e82dc0596f2f7738a",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "output:reference%2Fenvironment.json",
+          "required": false
+        },
+        {
+          "check": "verified",
+          "key": "output:reference%2Fmetrics.json",
+          "required": false
+        },
+        {
+          "check": "verified",
+          "key": "output:reference%2Fmodel.json",
+          "required": false
+        },
+        {
+          "check": "verified",
+          "key": "output:reference%2Fpredictions.csv",
+          "required": false
+        },
+        {
+          "check": "verified",
+          "key": "output:reference%2Fresult.json",
+          "required": false
+        }
+      ],
+      "network_status": "observed_no_forbidden_events",
+      "numerical": "unchecked",
+      "oracle": null,
+      "private_log_hashes": {
+        "commands": {
+          "sha256": "78daf268804228ebd86fa75453efc755c62f8293f67ef11e85e716d1ab4d37e4",
+          "size": 54301
+        },
+        "trace": {
+          "sha256": "28f67e3b5508bac4d66ca3d443fffa375a42850fc403d36c0f423e22ee92de90",
+          "size": 30685729
+        }
+      },
+      "registration": "confirmed",
+      "runtime": "unchecked",
+      "source_run_id": "e98a5ce5293a6ab9c8118279b7a3437a",
+      "source_snapshot_id": "c85af3168cea4d8c954dcd8e0b129bc0",
+      "system": "core",
+      "training_process_count": 0,
+      "training_processes": [],
+      "wine_uuids": null
+    },
+    {
+      "attempt_id": "99d2e35d0ef448398cbac7adc75e8236",
+      "attributed_unknowns": [],
+      "c1_revision": "38c3e6949005c7eba285e0327ae33bd8f8064043",
+      "c2_revision": "55dc41e5e65a804a6c720274295592587ea6d3d3",
+      "case": "S2",
+      "common_checks": [
+        {
+          "key": "input:data:wine.data",
+          "required": true,
+          "status": "corrupt"
+        },
+        {
+          "key": "material:README.md",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:config.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:data%2FSOURCE.md",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:manifest.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:pipeline.py",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:prepare_split.py",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:protocol.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:reference-environment",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:requirements.lock",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:split.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:test_pipeline.py",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3A1f69d6385ec30e2fa6e1fdeb37c562ecabd0f713f6f3e3b58a668c5c9df9567f",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3A3dbbf9f6e4b592a2357b854608e980fe6390d131d7a82f011a377ef2ebef7aba",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3A9acb47f6afd73f60dc1df93bb801b472f05ff42fa6c84167d25cb206be1fbf4a",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Ae5d7b18a5b9dca241a74695f3275fa4c895a9dadc72b3d8df5fa9d1083c9b83e",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Af1b49c82704d50f13ffae019c727b0fa4f6791a58f48f06a09c45face1be66da",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Af55fa87b6c612ecd6b058f167c53231b1d14e412efe361d3d6e38b3631c73218",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Afbde6962867ee75b48b0ee29b2b9372ec5d617799dbaf38e82dc0596f2f7738a",
+          "required": true,
+          "status": "verified"
+        }
+      ],
+      "corruption_detection": "common_corrupt",
+      "diagnosis": "common checker classified restored material",
+      "dvc_experiment": null,
+      "execution": "unchecked",
+      "functional_assumption": "post-amendment-v3: byte-checked, source-audited non-spawning CLI leaf process with a complete temporally ordered thread group; network remains unchecked",
+      "functional_status": "passed",
+      "history_unchanged": true,
+      "materials": "corrupt",
+      "mlflow_run_id": "b07debc7eb024a96a68a65e8680b449d",
+      "mutation_proof": {
+        "sha256": "bd893782ef39cd49a95ae1ca8f002f7ae3419957cd8d8d1ffde0ae2e09782812",
+        "size": 10782,
+        "state": "corrupt"
+      },
+      "native_exit": 0,
+      "network_status": "observed_no_forbidden_events",
+      "numerical": "unchecked",
+      "oracle": null,
+      "private_log_hashes": {
+        "commands": {
+          "sha256": "2358e73668f2a59dfca9e3e5cc5764e1d27850acae2e717299c3811b800fb2b8",
+          "size": 120440
+        },
+        "trace": {
+          "sha256": "df9b3f43692b7430343d67d1eea6de6eb8c73af61ace95f736f67bd63b2ceded",
+          "size": 47350335
+        }
+      },
+      "registration": "confirmed",
+      "runtime": "unchecked",
+      "source_run_id": "e1c2f20435b246848887d8903b4a4972",
+      "system": "alternative",
+      "target_status": "corrupt",
+      "training_process_count": 0,
+      "training_processes": []
+    },
+    {
+      "attempt_id": "5e6c3f793b494991ae240b659b7f3488",
+      "attributed_unknowns": [
+        {
+          "kind": "unknown_syscall",
+          "pid": 1439243,
+          "root_pid": 1439240,
+          "sequence": 4881
+        },
+        {
+          "kind": "unknown_syscall",
+          "pid": 1439608,
+          "root_pid": 1439601,
+          "sequence": 5629
+        }
+      ],
+      "case": "S3",
+      "common_checks": [
+        {
+          "key": "input:data:wine.data",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:README.md",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:config.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:data%2FSOURCE.md",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:manifest.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:pipeline.py",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:prepare_split.py",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:protocol.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:reference-environment",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:requirements.lock",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:split.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:test_pipeline.py",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3A1f69d6385ec30e2fa6e1fdeb37c562ecabd0f713f6f3e3b58a668c5c9df9567f",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3A3dbbf9f6e4b592a2357b854608e980fe6390d131d7a82f011a377ef2ebef7aba",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3A9acb47f6afd73f60dc1df93bb801b472f05ff42fa6c84167d25cb206be1fbf4a",
+          "required": true,
+          "status": "missing"
+        },
+        {
+          "key": "material:wheel%3Ae5d7b18a5b9dca241a74695f3275fa4c895a9dadc72b3d8df5fa9d1083c9b83e",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Af1b49c82704d50f13ffae019c727b0fa4f6791a58f48f06a09c45face1be66da",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Af55fa87b6c612ecd6b058f167c53231b1d14e412efe361d3d6e38b3631c73218",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3Afbde6962867ee75b48b0ee29b2b9372ec5d617799dbaf38e82dc0596f2f7738a",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "output:reference%2Fenvironment.json",
+          "required": false,
+          "status": "verified"
+        },
+        {
+          "key": "output:reference%2Fmetrics.json",
+          "required": false,
+          "status": "verified"
+        },
+        {
+          "key": "output:reference%2Fmodel.json",
+          "required": false,
+          "status": "verified"
+        },
+        {
+          "key": "output:reference%2Fpredictions.csv",
+          "required": false,
+          "status": "verified"
+        },
+        {
+          "key": "output:reference%2Fresult.json",
+          "required": false,
+          "status": "verified"
+        }
+      ],
+      "core_run_id": "feff46a282fd15b72dda46fc2f21255c",
+      "current_snapshot_id": "1344e741f1e42385cd3d829401c20279",
+      "execution": "unchecked",
+      "functional_assumption": "post-amendment-v3: byte-checked, source-audited non-spawning CLI leaf process with a complete temporally ordered thread group; network remains unchecked",
+      "functional_status": "passed",
+      "history_unchanged": true,
+      "materials": "failed",
+      "mutation_proof": {
+        "state": "missing"
+      },
+      "native_blockers": [
+        {
+          "code": "missing",
+          "material_key": "material:wheel%3A9acb47f6afd73f60dc1df93bb801b472f05ff42fa6c84167d25cb206be1fbf4a"
+        }
+      ],
+      "native_diagnostic": "required materials unavailable",
+      "native_exit": 1,
+      "native_material_checks": [
+        {
+          "check": "verified",
+          "key": "input:data:wine.data",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:README.md",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:config.json",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:data%2FSOURCE.md",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:manifest.json",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:pipeline.py",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:prepare_split.py",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:protocol.json",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:reference-environment",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:requirements.lock",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:split.json",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:test_pipeline.py",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3A1f69d6385ec30e2fa6e1fdeb37c562ecabd0f713f6f3e3b58a668c5c9df9567f",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3A3dbbf9f6e4b592a2357b854608e980fe6390d131d7a82f011a377ef2ebef7aba",
+          "required": true
+        },
+        {
+          "check": "missing",
+          "key": "material:wheel%3A9acb47f6afd73f60dc1df93bb801b472f05ff42fa6c84167d25cb206be1fbf4a",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3Ae5d7b18a5b9dca241a74695f3275fa4c895a9dadc72b3d8df5fa9d1083c9b83e",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3Af1b49c82704d50f13ffae019c727b0fa4f6791a58f48f06a09c45face1be66da",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3Af55fa87b6c612ecd6b058f167c53231b1d14e412efe361d3d6e38b3631c73218",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "material:wheel%3Afbde6962867ee75b48b0ee29b2b9372ec5d617799dbaf38e82dc0596f2f7738a",
+          "required": true
+        },
+        {
+          "check": "verified",
+          "key": "output:reference%2Fenvironment.json",
+          "required": false
+        },
+        {
+          "check": "verified",
+          "key": "output:reference%2Fmetrics.json",
+          "required": false
+        },
+        {
+          "check": "verified",
+          "key": "output:reference%2Fmodel.json",
+          "required": false
+        },
+        {
+          "check": "verified",
+          "key": "output:reference%2Fpredictions.csv",
+          "required": false
+        },
+        {
+          "check": "verified",
+          "key": "output:reference%2Fresult.json",
+          "required": false
+        }
+      ],
+      "network_status": "unchecked",
+      "numerical": "unchecked",
+      "oracle": null,
+      "private_log_hashes": {
+        "commands": {
+          "sha256": "4e22eaeb2343f410b20e8fd063c0efea091157c47e5a36f18283d46441cc708e",
+          "size": 54301
+        },
+        "trace": {
+          "sha256": "832f3dd566eabe5181f3fe08d9e956d1102cfeb0ceae1855a6eabf65ab034096",
+          "size": 30694660
+        }
+      },
+      "registration": "confirmed",
+      "runtime": "unchecked",
+      "source_run_id": "e72003317b18bba9cff0315c7ffbb487",
+      "source_snapshot_id": "5cd86807fcc123f3ed13f8a40576cb22",
+      "system": "core",
+      "training_process_count": 0,
+      "training_processes": [],
+      "wine_uuids": null
+    },
+    {
+      "attempt_id": "5aa6132a5e234179b2bae541dd413659",
+      "attributed_unknowns": [],
+      "c1_revision": "9aaefb2f73717ebd5ab8597e0d2fb344daa756e8",
+      "c2_revision": "27695cd8fde170c4af911b0de912d6b54c820cd0",
+      "case": "S3",
+      "common_checks": [
+        {
+          "key": "input:data:wine.data",
+          "required": true,
+          "status": "missing"
+        },
+        {
+          "key": "material:README.md",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:config.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:data%2FSOURCE.md",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:manifest.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:pipeline.py",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:prepare_split.py",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:protocol.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:reference-environment",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:requirements.lock",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:split.json",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:test_pipeline.py",
+          "required": true,
+          "status": "verified"
+        },
+        {
+          "key": "material:wheel%3A1f69d6385ec30e2fa6e1fdeb37c562ecabd0f713f6f3e3b58a668c5c9df9567f",
+          "required": true,
+          "status": "missing"
+        },
+        {
+          "key": "material:wheel%3A3dbbf9f6e4b592a2357b854608e980fe6390d131d7a82f011a377ef2ebef7aba",
+          "required": true,
+          "status": "missing"
+        },
+        {
+          "key": "material:wheel%3A9acb47f6afd73f60dc1df93bb801b472f05ff42fa6c84167d25cb206be1fbf4a",
+          "required": true,
+          "status": "missing"
+        },
+        {
+          "key": "material:wheel%3Ae5d7b18a5b9dca241a74695f3275fa4c895a9dadc72b3d8df5fa9d1083c9b83e",
+          "required": true,
+          "status": "missing"
+        },
+        {
+          "key": "material:wheel%3Af1b49c82704d50f13ffae019c727b0fa4f6791a58f48f06a09c45face1be66da",
+          "required": true,
+          "status": "missing"
+        },
+        {
+          "key": "material:wheel%3Af55fa87b6c612ecd6b058f167c53231b1d14e412efe361d3d6e38b3631c73218",
+          "required": true,
+          "status": "missing"
+        },
+        {
+          "key": "material:wheel%3Afbde6962867ee75b48b0ee29b2b9372ec5d617799dbaf38e82dc0596f2f7738a",
+          "required": true,
+          "status": "missing"
+        }
+      ],
+      "corruption_detection": null,
+      "diagnosis": "native pull failed; exact cause unclassified",
+      "dvc_experiment": null,
+      "execution": "unchecked",
+      "functional_assumption": "post-amendment-v3: byte-checked, source-audited non-spawning CLI leaf process with a complete temporally ordered thread group; network remains unchecked",
+      "functional_status": "passed",
+      "history_unchanged": true,
+      "materials": "missing",
+      "mlflow_run_id": "295052fefd444683a7718aae38c8c1ae",
+      "mutation_proof": {
+        "state": "missing"
+      },
+      "native_exit": 1,
+      "network_status": "observed_no_forbidden_events",
+      "numerical": "unchecked",
+      "oracle": null,
+      "private_log_hashes": {
+        "commands": {
+          "sha256": "3ca908943aeb68b53d24c08e0ef3b64d572962a1315d0601526294b56907a50b",
+          "size": 120440
+        },
+        "trace": {
+          "sha256": "13c00480ab4ed3ba2faecec0ec5cd0c0b73fd384f68a4ee679ea5d62a300a621",
+          "size": 47240130
+        }
+      },
+      "registration": "confirmed",
+      "runtime": "unchecked",
+      "source_run_id": "873c7ebee35b4b15a8a882a955acffbc",
+      "system": "alternative",
+      "target_status": "missing",
+      "training_process_count": 0,
+      "training_processes": []
+    }
+  ],
+  "diagnostics": "Schema-projected keys/codes/statuses; diagnostic text omitted or redacted. Paths and full raw command logs remain private; hashes refer to unchanged raw files.",
+  "harness_commit": "70aedce6844b4723d7d07edd00ab54034fea381a",
+  "protocol_schema_version": 3,
+  "protocol_sha256": "508e3891196cdedb347916235d24944fa80085e7ee48d7e4180c14966f37e82f",
+  "schema_version": 1,
+  "series_label": "post-amendment-v3",
+  "tool_provenance": {
+    "cli": {
+      "sha256": "2edb397e4a653a00e811acc342ae08f2067aa5f7b70113c01ac55ccfaa842b10",
+      "size": 5023508
+    },
+    "core_commit": "5c37e250896fbb67670e7a1897853f78baec144d",
+    "source_audit": {
+      "files": {
+        "catalog/diff.go": {
+          "sha256": "2c92103e5bda836964e9c64f3a872a057bc9eeff833462a8e4ca527ea1f2b655",
+          "size": 6470
+        },
+        "catalog/experiment_json.go": {
+          "sha256": "1337893d9c6f97e5f65c5ffadd1ca4a9664b8b2cff3f0cdea40162f0fb8784fe",
+          "size": 4857
+        },
+        "catalog/experiment_validation.go": {
+          "sha256": "7b008f7f7cb7fdb59a0ddd66fdcd36941e8ba40584311194594727856795272e",
+          "size": 8171
+        },
+        "catalog/json.go": {
+          "sha256": "c4324995dcf189ca5a6ba0595718a0e32568ed2393d7d85c8209be8be6aee291",
+          "size": 4864
+        },
+        "catalog/metadata.go": {
+          "sha256": "d9198d7b5ad5441f51b2453a07244f2b00a26dac7d32dabe0ed1dba8e9faa523",
+          "size": 14357
+        },
+        "catalog/recovery.go": {
+          "sha256": "4d858bf144c959d0bc07c5f7bd43432a9e8a540db01218e1f087163c2133bf32",
+          "size": 6060
+        },
+        "catalog/service.go": {
+          "sha256": "d2972d3f24fce50c03201dc35af70cbd58380712c8f84692f50a7952ef78dd49",
+          "size": 10162
+        },
+        "catalog/types.go": {
+          "sha256": "20fc16093d9cdcdd5f1101a8a435658eb9208ecb314492ded1456ca17935d874",
+          "size": 6640
+        },
+        "catalog/validation.go": {
+          "sha256": "8bef67b2b5ab0a967a1a355762d5cf9e03d6f16149f2ad819351c91b759203ff",
+          "size": 1707
+        },
+        "catalog/view.go": {
+          "sha256": "de8968f78e96ee72042148c6c78e4b350144760c992df36bdafa9dc1e1dbfb33",
+          "size": 3727
+        },
+        "cmd/smlops/catalog.go": {
+          "sha256": "7122e556df49f3b0b4c21a8a71445bc26391b850d59e79ec9fad136d908df75e",
+          "size": 7173
+        },
+        "cmd/smlops/main.go": {
+          "sha256": "194520ef9971d10e71ce467cef52fb53469f5dac5f1a3b0db80706d2146bf116",
+          "size": 4342
+        },
+        "cmd/smlops/recovery.go": {
+          "sha256": "13551fc46fb86f405ae53ce1d6876c5a81175f4392397dfd4a76f1e22d6e32fc",
+          "size": 1185
+        },
+        "go.mod": {
+          "sha256": "069446ca461bce8829c31646c9f902169356b0b3adbace88daa52641693d208d",
+          "size": 78
+        },
+        "object/object.go": {
+          "sha256": "b366691a991a6607c2629670b22d4fcbb20be8608dcc81e8b0a7bda23728cf85",
+          "size": 1014
+        },
+        "storage/local/local.go": {
+          "sha256": "c35e9ce79c005edb944a1bd90a616e7a9c790279a46c9eb1745c6e3ef54cc8de",
+          "size": 7444
+        }
+      },
+      "rule": "non-test project source has no searched process-spawn/exec primitives; not a proof about arbitrary hidden processes",
+      "source_commit": "5c37e250896fbb67670e7a1897853f78baec144d"
+    }
+  }
+}
