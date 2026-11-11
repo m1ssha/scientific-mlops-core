@@ -4,3 +4,5 @@ examples/wine/evidence/**/predictions.csv -text whitespace=blank-at-eol,blank-at
 # Keep every hashed Wine cycle evidence byte unchanged.
 examples/wine_catalog/evidence/issue20/** -text
 examples/wine_catalog/evidence/issue20/repeat-output/predictions.csv whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+# Preserve raw evaluation evidence hashes across Git checkouts.
+examples/evaluation/evidence/** -text
