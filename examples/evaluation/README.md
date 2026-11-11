@@ -141,3 +141,30 @@ thread in that group must be a `CLONE_THREAD` child; process creation, any extra
 exec, PID reuse, missing lineage or missing normal terminal blocks attribution.
 The event must follow observed group exit. The network result remains unchecked;
 this operational assumption does not prove the absence of hidden processes.
+
+## Preparation failure in the first post-amendment-v3 series
+
+The authorized `post-amendment-v3` series stopped after six cases started:
+the first five had functional status `passed`; S2/alternative was `blocked`
+before DVC pull or creation of the alternative's MLflow attempt. The attempted
+same-size corruption could not write the disposable DVC remote object because
+its mode was `0444`. This is a harness preparation failure, not a finding that
+DVC did or did not detect corruption. S3 was not started. The original result,
+audit and trace remain unchanged and are not reassessed by this fix.
+
+SHA-256 values of the retained original evidence:
+
+- attempts index: `f76c39bf36f74402f90de2ca30f3de637fb8e7022866065f32cbf6039c4053c9`;
+- S2/alternative result: `14ef8a7d486bcd189ce5b7cb7806f128e3ce48589f9f086cd778625fe0a48c64`;
+- S2/alternative audit: `ff4077fc234dfcbac4542921a8053857198184d54935bbc7383dde01f1ee5d71`;
+- S2/alternative raw trace: `3f935ffd3337db6a9cad1d0dbae01f1376003f8a14dc35e7961d3da125b465b2`.
+
+For future separately authorized cases, the corruption helper verifies the
+caller-selected disposable file is a regular file owned by the current user,
+with one link and the expected original and mutated SHA-256/size. If owner-write
+is absent, it adds that permission temporarily, writes and synchronizes the
+single changed byte, verifies the result, and restores the original mode even
+on failure. It rejects symlinks and shared hardlinks. The caller is responsible for selecting
+a path in its new disposable workdir; file ownership does not prove disposability.
+Source assets and past series are not mutation targets; this change does not relax protocol v3 or
+change the outcome of the stopped attempt.

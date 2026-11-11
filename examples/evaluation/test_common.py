@@ -371,3 +371,48 @@ class TestFrozenGate(unittest.TestCase):
      with self.subTest(path=name):
       git('reset','--hard',plan);(root/name).write_text('changed');git('add',name);git('commit','-qm','change frozen file');head=git('rev-parse','HEAD')
       with self.assertRaisesRegex(ValueError,'approved plan or lock changed'):harness.gate(head)
+
+class TestDisposableMutation(unittest.TestCase):
+ def target(self,data):
+  import hashlib
+  return {'sha256':hashlib.sha256(data).hexdigest(),'size':len(data),'mutated_sha256':hashlib.sha256(bytes([data[0]^1])+data[1:]).hexdigest()}
+ def test_readonly_copy_preserves_mode_and_source(self):
+  import os,stat
+  with tempfile.TemporaryDirectory() as tmp:
+   root=Path(tmp);source=root/'source';source.mkdir();original=source/'data';original.write_bytes(b'abc');original.chmod(0o444)
+   safe_copy_tree(source,root/'copy');copy=root/'copy/data';before=digest(original)
+   result=mutation(copy,'corrupt',self.target(b'abc'))
+   self.assertEqual(result['sha256'],self.target(b'abc')['mutated_sha256']);self.assertEqual(result['size'],3)
+   self.assertEqual(stat.S_IMODE(copy.stat().st_mode),0o444);self.assertEqual(digest(original),before)
+   self.assertEqual(stat.S_IMODE(original.stat().st_mode),0o444);self.assertEqual(original.read_bytes(),b'abc')
+ def test_hardlink_symlink_and_unowned_rejected_without_change(self):
+  import os,stat
+  from unittest.mock import patch
+  with tempfile.TemporaryDirectory() as tmp:
+   root=Path(tmp);original=root/'source';original.write_bytes(b'abc');original.chmod(0o444);hard=root/'hard';os.link(original,hard);symlink=root/'sym';symlink.symlink_to(original)
+   for candidate in (hard,symlink):
+    with self.subTest(path=candidate):
+     with self.assertRaises(ValueError):mutation(candidate,'corrupt',self.target(b'abc'))
+     self.assertEqual(original.read_bytes(),b'abc');self.assertEqual(stat.S_IMODE(original.stat().st_mode),0o444)
+   hard.unlink()
+   with patch('common.os.geteuid',return_value=original.stat().st_uid+1):
+    with self.assertRaises(ValueError):mutation(original,'corrupt',self.target(b'abc'))
+   self.assertEqual(original.read_bytes(),b'abc');self.assertEqual(stat.S_IMODE(original.stat().st_mode),0o444)
+ def test_restore_after_write_failure_and_reject_wrong_hash(self):
+  import stat
+  from unittest.mock import patch
+  with tempfile.TemporaryDirectory() as tmp:
+   p=Path(tmp)/'object';p.write_bytes(b'abc');p.chmod(0o444)
+   with patch('common.os.pwrite',side_effect=OSError('synthetic failure')):
+    with self.assertRaises(OSError):mutation(p,'corrupt',self.target(b'abc'))
+   self.assertEqual(p.read_bytes(),b'abc');self.assertEqual(stat.S_IMODE(p.stat().st_mode),0o444)
+   wrong=dict(self.target(b'abc'));wrong['mutated_sha256']='0'*64
+   with self.assertRaises(ValueError):mutation(p,'corrupt',wrong)
+   self.assertEqual(p.read_bytes(),b'abc');self.assertEqual(stat.S_IMODE(p.stat().st_mode),0o444)
+ def test_missing_and_nonregular_targets_rejected(self):
+  import os
+  with tempfile.TemporaryDirectory() as tmp:
+   root=Path(tmp)
+   with self.assertRaises(ValueError):mutation(root/'missing','corrupt',self.target(b'abc'))
+   fifo=root/'fifo';os.mkfifo(fifo)
+   with self.assertRaises(ValueError):mutation(fifo,'corrupt',self.target(b'abc'))
