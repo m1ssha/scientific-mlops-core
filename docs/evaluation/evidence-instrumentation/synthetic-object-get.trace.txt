@@ -1,0 +1,20 @@
+1067262 execve("<SCRATCH>/smlops", ["<SCRATCH>/smlops", "object", "get", "--store", "<SCRATCH>/store", "--sha256", "6f10a9542df52c3ea792c978144d39c46b4ba71debfde19c510ca5b59bba2973", "--size", "13", "--output", "<SCRATCH>/output"], 0x7ffefa947268 /* 21 vars */) = 0
+1067262 clone(child_stack=0x3d07a549e000, flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS, tls=0x3d07a54dc090) = 1067263
+1067262 clone(child_stack=0x3d07a54f8000, flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS, tls=0x3d07a54dc890) = 1067264
+1067263 tgkill(1067262, 1067262, SIGURG <unfinished ...>
+1067262 clone(child_stack=0x3d07a54f4000, flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS <unfinished ...>
+1067263 <... tgkill resumed>)           = 0
+1067262 <... clone resumed>, tls=0x3d07a54dd090) = 1067265
+1067262 --- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=1067262, si_uid=1000} ---
+1067264 clone(child_stack=0x3d07a5520000, flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS, tls=0x3d07a5508090) = 1067266
+1067264 clone(child_stack=0x3d07a551c000, flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS, tls=0x3d07a54dd890) = 1067267
+1067262 write(1<<SCRATCH>/logs/003.stdout>, "{\"object\":{\"algorithm\":\"sha256\",\"digest\":\"6f10a9542df52c3ea792c978144d39c46b4ba71debfde19c510ca5b59bba2973\",\"size\":13},\"output\":\"<SCRATCH>/output\"}\n", 213) = 213
+1067262 exit_group(0 <unfinished ...>
+1067263 ???( <unfinished ...>
+1067262 <... exit_group resumed>)       = ?
+1067267 +++ exited with 0 +++
+1067266 +++ exited with 0 +++
+1067265 +++ exited with 0 +++
+1067263 +++ exited with 0 +++
+1067264 +++ exited with 0 +++
+1067262 +++ exited with 0 +++

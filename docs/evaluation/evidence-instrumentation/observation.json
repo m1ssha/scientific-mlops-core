@@ -1,0 +1,13 @@
+{
+  "cli_exit": 0,
+  "command": "pinned core object get on 13 synthetic bytes",
+  "comparative_wine_cases_started": 0,
+  "normalization": "replace absolute task-owned scratch prefix with <SCRATCH>; raw trace retained privately",
+  "observation": "unknown unfinished syscall at thread exit; network coverage not established",
+  "original_protocol_commit": "299d963ea931816fea932037b909c057aafa7629",
+  "phase": "instrumentation availability; non-Wine; before all comparative cases",
+  "public_trace_sha256": "bb849f8c17324bf7cfee53a104f7ce45f47f5a6550538ace2e1ef7ff80ecf263",
+  "raw_trace_sha256": "d8d71c74e7df48fd1b3bd225578b62cbce98b8025bda604d59c9d9b024ff8626",
+  "schema_version": 1,
+  "upstream_source": "https://github.com/strace/strace/blob/v6.19/src/syscall.c#L1422-L1457"
+}
