@@ -1,0 +1,26 @@
+name: Clean public demo
+on:
+  push:
+  pull_request:
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.15'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24.21.0
+      - run: python3 -m unittest discover -s tools -p 'test_verify_demo.py' -v
+      - name: Install Chromium system dependencies
+        run: |
+          npx --yes playwright@1.65.0 install-deps chromium
+      - name: Verify clean public demo
+        env:
+          CORE_REF: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 tools/verify_demo.py --core-ref "$CORE_REF" --work "$RUNNER_TEMP/clean-demo" --install-browser
