@@ -103,15 +103,18 @@ class TestExport(unittest.TestCase):
    root=Path(tmp);work=root/'work';work.mkdir();(work/'series.json').write_text(json.dumps({'harness_commit':'test','protocol':{'case_order':[['S0','core']]}}))
    index=work/'attempts.jsonl';index.write_text(json.dumps({'event':'tool_setup_finished','status':'complete'})+'\n'+json.dumps({'event':'started','case':'S0','system':'core','attempt_id':'id'})+'\n')
    with self.assertRaises(ValueError):export(work,root/'incomplete')
+   tool=work/'tool-setup';tool.mkdir();(tool/'manifest.json').write_text(json.dumps({'core_commit':'sha','cli':{'sha256':'dummy'},'source_audit':{'files':{}}}))
    for role in ('source','repeat'):
     d=work/role;d.mkdir()
     for name in NAMES:(d/name).write_bytes((role+':'+name+'\r\n').encode())
-   case=work/'S0-core';case.mkdir();stage={'history_unchanged':True,'native_report':{'registration':'confirmed','execution':'succeeded','runtime':'passed','numerical':'pass'},'common_checks':[],'training_execs_all':[{'pid':1}],'source_output_dir':str(work/'source'),'repeat_output_dir':str(work/'repeat')}
+   case=work/'S0-core';case.mkdir();(case/'commands').mkdir();(case/'commands/commands.jsonl').write_text('private log')
+   (work/'case-traces').mkdir();(work/'case-traces/001.trace').write_text('private trace')
+   stage={'history_unchanged':True,'native_report':{'registration':'confirmed','execution':'succeeded','runtime':'passed','numerical':'pass','material_checks':[{'key':'input:sample','check':'missing','required':True,'detail':'/private/diagnostic'}],'blockers':[{'material_key':'input:sample','code':'missing','message':'/private/diagnostic'}]},'common_checks':[{'key':'input:sample','status':'missing','required':True,'detail':'/private/diagnostic'}],'training_execs_all':[{'pid':1}],'source_output_dir':str(work/'source'),'repeat_output_dir':str(work/'repeat')}
    (case/'result.json').write_text(json.dumps({'status':'observed','attempt_id':'id','stages':stage}))
    with index.open('a') as f:f.write(json.dumps({'event':'finished','case':'S0','system':'core','attempt_id':'id','status':'observed'})+'\n')
-   (work/'S0-core-audit.json').write_text(json.dumps({'status':'observed','network':{'status':'pass'},'training_execs_all':[{'pid':1}]}))
+   (work/'S0-core-audit.json').write_text(json.dumps({'status':'observed','functional_status':'passed','network_status':'observed_no_forbidden_events','attributed_unknowns':[],'functional_assumption':'test','network':{'status':'pass'},'training_execs_all':[{'pid':1}]}))
    export(work,root/'out');self.assertEqual((root/'out/S0-core/repeat/predictions.csv').read_bytes(),(work/'repeat/predictions.csv').read_bytes())
-   self.assertNotIn(str(work),(root/'out/results.json').read_text())
+   public=(root/'out/results.json').read_text();self.assertNotIn(str(work),public);self.assertNotIn('/private/diagnostic',public);self.assertIn('input:sample',public)
 
 class TestObservedTraffic(unittest.TestCase):
  def test_unknown_is_never_pass(self):
@@ -134,9 +137,9 @@ class TestOrchestration(unittest.TestCase):
   from harness import assess_trace
   p={'cases':{'S1':{'training_calls_expected':0}}}
   trace={'status':'pass','execs':[{'pid':3,'call':'execve("pipeline.py", ["run", "validation"], 0) = 0'}]}
-  self.assertEqual(assess_trace(trace,0,{'status':'observed'},'S1',p)['status'],'blocked')
-  trace['execs']=[];self.assertEqual(assess_trace(trace,0,{'status':'observed'},'S1',p)['status'],'observed')
-  trace['status']='unchecked';self.assertEqual(assess_trace(trace,0,{'status':'observed'},'S1',p)['status'],'blocked')
+  self.assertEqual(assess_trace(trace,0,{'status':'observed'},'S1',p,'/test/smlops')['status'],'blocked')
+  trace['execs']=[];self.assertEqual(assess_trace(trace,0,{'status':'observed'},'S1',p,'/test/smlops')['status'],'observed')
+  trace['status']='unchecked';self.assertEqual(assess_trace(trace,0,{'status':'observed'},'S1',p,'/test/smlops')['status'],'blocked')
 
 class TestWholeCaseTrace(unittest.TestCase):
  def test_trace_includes_nested_synthetic_training_process(self):
@@ -148,5 +151,35 @@ class TestWholeCaseTrace(unittest.TestCase):
    worker=root/'worker.py';worker.write_text('import subprocess,sys\nsubprocess.run([sys.executable,sys.argv[1],"run","--phase","validation"],check=True)\n')
    ex=Executor(logs,time.monotonic()+30);env={'PATH':'/usr/bin:/bin','HOME':str(root)}
    code,_,observation=ex.run([sys.executable,worker,pipeline],root,env)
-   result=assess_trace(observation,code,{'status':'observed'},'S0',{'cases':{'S0':{'training_calls_expected':1}}})
+   result=assess_trace(observation,code,{'status':'observed'},'S0',{'cases':{'S0':{'training_calls_expected':1}}},'/test/smlops')
    self.assertEqual(result['status'],'observed');self.assertEqual(len(result['training_execs_all']),1)
+
+class TestV2Attribution(unittest.TestCase):
+ def test_known_cli_leaf_only_and_network_unchecked(self):
+  from trace import attribute_unknowns
+  from harness import assess_trace
+  raw='''100 1.000 execve("/p/smlops", ["/p/smlops", "object"], 0) = 0
+100 1.010 clone(child_stack=NULL, flags=CLONE_THREAD) = 101
+100 1.020 exit_group(0 <unfinished ...>
+101 1.021 ???( <unfinished ...>
+100 1.022 <... exit_group resumed>) = ?
+101 1.023 +++ exited with 0 +++
+100 1.024 +++ exited with 0 +++
+'''
+  obs=classify(raw);self.assertEqual(obs['status'],'unchecked');self.assertEqual(attribute_unknowns(obs,'/p/smlops')[0]['pid'],101)
+  protocol={'cases':{'S1':{'training_calls_expected':0}}}
+  audit=assess_trace(obs,0,{'status':'observed'},'S1',protocol,'/p/smlops');self.assertEqual(audit['functional_status'],'passed');self.assertEqual(audit['network_status'],'unchecked')
+  self.assertIsNone(attribute_unknowns(obs,'/other/smlops'))
+  self.assertEqual(assess_trace(classify(raw.replace('CLONE_THREAD','SIGCHLD')),0,{'status':'observed'},'S1',protocol,'/p/smlops')['status'],'blocked')
+  self.assertEqual(assess_trace(classify(raw.replace('101 1.023 +++ exited with 0 +++\n','')),0,{'status':'observed'},'S1',protocol,'/p/smlops')['status'],'blocked')
+ def test_traffic_wins_over_unknown_and_unattributed_stops(self):
+  raw='1 socket(AF_INET, SOCK_STREAM, 0) = 3<TCP:[1]>\n1 connect(3<TCP:[1]>, {sa_family=AF_INET}, 16) = 0\n2 ???( <unfinished ...>\n'
+  self.assertEqual(classify(raw)['status'],'traffic')
+  from trace import attribute_unknowns
+  self.assertIsNone(attribute_unknowns(classify('1 ???( <unfinished ...>\n'),'/p/smlops'))
+
+class TestNormalExit(unittest.TestCase):
+ def test_nonreturning_exit_group_is_not_unknown(self):
+  cases=['1 1.0 exit_group(0) = ?\n1 1.1 +++ exited with 0 +++\n',
+         '1 1.0 exit_group(0 <unfinished ...>\n1 1.1 <... exit_group resumed>) = ?\n1 1.2 +++ exited with 0 +++\n']
+  for case in cases:self.assertEqual(classify(case)['status'],'pass')

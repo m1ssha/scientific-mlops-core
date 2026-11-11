@@ -55,7 +55,7 @@ class Executor:
         budget=min(stage_limit,self.deadline-time.monotonic())
         if budget<=0:raise StageFailure('case deadline expired')
         command=[str(x) for x in argv]
-        actual=(['strace','-f','-yy','-s','4096','-e','trace=network,process,write,writev,sendfile,splice','-o',str(base)+'.trace','--'] if trace else [])+command
+        actual=(['strace','-f','-ttt','-yy','-s','4096','-e','trace=network,process,write,writev,sendfile,splice','-o',str(base)+'.trace','--'] if trace else [])+command
         rec={'argv':command,'cwd':str(cwd),'env':dict(env),'started_ns':time.time_ns(),'timeout_seconds':budget}
         append_event(self.root/'commands.jsonl',{'event':'started','stage':name,**rec})
         with open(str(base)+'.stdout','xb') as out,open(str(base)+'.stderr','xb') as err:

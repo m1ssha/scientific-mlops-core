@@ -16,11 +16,12 @@ from prepare import prepare_core,prepare_baseline
 from core_adapter import run_case as core_case
 from baseline_adapter import run_case as baseline_case
 from tracking import Tracker
+from trace import attribute_unknowns
 
 HERE=Path(__file__).resolve().parent
 REPO=HERE.parents[1]
 CORE='5c37e250896fbb67670e7a1897853f78baec144d'
-PLAN='299d963ea931816fea932037b909c057aafa7629'
+PLAN='107cf252e799b5f0f8e187abec431dab80f4ab84'
 NAMES=('result.json','predictions.csv','metrics.json','model.json','environment.json')
 
 def gate(reviewed):
@@ -28,7 +29,7 @@ def gate(reviewed):
     require(reviewed==head,'reviewed SHA must match checked-out harness HEAD')
     require(subprocess.run(['git','merge-base','--is-ancestor',PLAN,head],cwd=REPO).returncode==0,'approved protocol not in history')
     require(not subprocess.check_output(['git','status','--porcelain','--untracked-files=all'],cwd=REPO,text=True).strip(),'harness checkout not clean')
-    for path in ('docs/evaluation/protocol-v1.json','docs/evaluation-plan.md','docs/evaluation/dvc-tools.txt','docs/evaluation/mlflow-tools.txt'):
+    for path in ('docs/evaluation/protocol-v1.json','docs/evaluation/protocol-v2.json','docs/evaluation-plan.md','docs/evaluation/dvc-tools.txt','docs/evaluation/mlflow-tools.txt'):
         pinned=subprocess.check_output(['git','show',PLAN+':'+path],cwd=REPO)
         require((REPO/path).read_bytes()==pinned,'approved plan or lock changed: '+path)
     return head
@@ -68,11 +69,24 @@ def verified_core(executor,source,root):
             sourcefile=tf.extractfile(member);require(sourcefile is not None and p.read_bytes()==sourcefile.read(),'checkout differs from Git')
     return core
 
+def audit_cli_sources(core):
+    forbidden=re.compile(r'"(?:os/exec|plugin|unsafe|C)"|//go:linkname|\b(?:StartProcess|ForkExec|RawSyscall|Syscall|Exec)\s*\(')
+    inventory={}
+    for p in sorted(core.rglob('*.go')):
+        if '.git' in p.parts or p.name.endswith('_test.go'):continue
+        data=p.read_text(encoding='utf-8');require(not forbidden.search(data),'CLI source contains an unsupported process/spawn primitive')
+        inventory[p.relative_to(core).as_posix()]=digest(p)
+    require(inventory,'no CLI source files found')
+    for name in ('go.mod','go.sum'):
+        p=core/name
+        if p.is_file():inventory[name]=digest(p)
+    return {'source_commit':CORE,'files':inventory,'rule':'non-test project source has no searched process-spawn/exec primitives; not a proof about arbitrary hidden processes'}
+
 def run_one(root,case,system,args,protocol,head,attempt,binary,binary_digest):
     work=root/(case+'-'+system);work.mkdir(mode=0o700)
     logs=work/'commands';logs.mkdir();executor=Executor(logs,time.monotonic()+protocol['timeouts_seconds']['case'],trace_children=False)
     executor.env=clean_environment(work,args.dvc);executor.python=args.control_python;executor.wine_python=args.wine_python;executor.dvc=args.dvc;executor.attempt_id=attempt['attempt_id']
-    outcome={'case':case,'system':system,'attempt_id':executor.attempt_id,'harness_commit':head,'protocol_sha256':digest(REPO/'docs/evaluation/protocol-v1.json')['sha256'],'stages':{},'status':'blocked'}
+    outcome={'case':case,'system':system,'attempt_id':executor.attempt_id,'harness_commit':head,'protocol_sha256':digest(REPO/'docs/evaluation/protocol-v2.json')['sha256'],'stages':{},'status':'blocked'}
     try:
         require(digest(binary)==binary_digest,'pinned CLI changed before case')
         core=verified_core(executor,args.core_source,work)
@@ -112,10 +126,19 @@ def run_one(root,case,system,args,protocol,head,attempt,binary,binary_digest):
 # URI parsing stays in the controller, not the MLflow worker.
 from urllib.parse import urlparse,unquote
 
-def assess_trace(observation,code,result,case,protocol,error=None):
-    training=[entry for entry in (observation or {}).get('execs',[]) if 'pipeline.py' in entry['call'] and '"run"' in entry['call'] and '"validation"' in entry['call']]
-    passed=(error is None and code==0 and result['status']=='observed' and observation and observation['status']=='pass' and len(training)==protocol['cases'][case]['training_calls_expected'])
-    return {'status':'observed' if passed else 'blocked','network':observation,'training_execs_all':training,'error':error,'exit':code}
+def assess_trace(observation,code,result,case,protocol,binary,error=None):
+    training=[dict(entry) for entry in (observation or {}).get('execs',[]) if 'pipeline.py' in entry['call'] and '"run"' in entry['call']]
+    for entry in training:
+        entry['exit']=(observation or {}).get('exits',{}).get(str(entry['pid']))
+    attributed=attribute_unknowns(observation,binary) if observation else None
+    functional=(error is None and code==0 and result['status']=='observed' and observation and observation['status']!='traffic' and attributed is not None and len(training)==protocol['cases'][case]['training_calls_expected'])
+    if functional and training:
+        functional=all(x.get('time') and x.get('exit') and x['exit'].get('time') and '"validation"' in x['call'] and x['call'].rstrip().endswith('= 0') for x in training)
+    auxiliary='observed_no_forbidden_events' if observation and observation['status']=='pass' else (observation or {}).get('status','unchecked')
+    return {'status':'observed' if functional else 'blocked','functional_status':'passed' if functional else 'blocked',
+            'network_status':auxiliary,'network':observation,'training_execs_all':training,'attributed_unknowns':attributed,
+            'functional_assumption':'only pinned byte-checked CLI leaf thread after exit_group may be attributed; network remains unchecked',
+            'error':error,'exit':code}
 
 def main(argv=None):
     p=argparse.ArgumentParser(description=__doc__)
@@ -124,7 +147,7 @@ def main(argv=None):
     p.add_argument('--reviewed-commit',required=True,help='exact reviewed clean harness commit; required only after review')
     a=p.parse_args(argv)
     try:
-        head=gate(a.reviewed_commit);protocol=read_json(REPO/'docs/evaluation/protocol-v1.json')
+        head=gate(a.reviewed_commit);protocol=read_json(REPO/'docs/evaluation/protocol-v2.json')
         protected=[REPO,a.core_source,a.platform_source,a.wheelhouse]
         root=new_root(a.work,protected);index=root/'attempts.jsonl'
         write_json_new(root/'series.json',{'harness_commit':head,'protocol':protocol,'started_ns':time.time_ns()})
@@ -133,8 +156,9 @@ def main(argv=None):
         ex=Executor(logs,time.monotonic()+protocol['timeouts_seconds']['case']);ex.env=clean_environment(setup,a.dvc)
         try:
             validate_tools(ex,a,protocol);checkout=verified_core(ex,a.core_source,setup)
+            source_audit=audit_cli_sources(checkout)
             binary=setup/'smlops';_,_,observation=ex.run([a.go,'build','-o',binary,'./cmd/smlops'],checkout,ex.env,allow_unchecked=True)
-            os.chmod(binary,0o555);cli_digest=digest(binary);write_json_new(setup/'manifest.json',{'core_commit':CORE,'cli':cli_digest,'build_network_observation':observation,'boundary':'tool setup before cases; no offline claim for build'})
+            os.chmod(binary,0o555);cli_digest=digest(binary);write_json_new(setup/'manifest.json',{'core_commit':CORE,'cli':cli_digest,'source_audit':source_audit,'build_network_observation':observation,'boundary':'tool setup before cases; no offline claim for build'})
             shutil.rmtree(checkout);append_event(index,{'event':'tool_setup_finished','unix_ns':time.time_ns(),'status':'complete'})
         except Exception as error:
             append_event(index,{'event':'tool_setup_finished','unix_ns':time.time_ns(),'status':'blocked','error':type(error).__name__});raise
@@ -147,7 +171,7 @@ def main(argv=None):
             write_json_new(request,{'root':str(root),'case':case,'system':system,'args':vars(a),'protocol':protocol,'head':head,'attempt':attempt,'binary':str(binary),'binary_digest':cli_digest})
             error=None;observation=None;code=None;stage_id=f'{tracer.count+1:03d}'
             try:
-                code,_,observation=tracer.run([a.control_python,HERE/'harness.py','--worker',request],REPO,traceenv,accept_failure=True,stage_limit=protocol['timeouts_seconds']['case'])
+                code,_,observation=tracer.run([a.control_python,HERE/'harness.py','--worker',request],REPO,traceenv,accept_failure=True,allow_unchecked=True,stage_limit=protocol['timeouts_seconds']['case'])
             except StageFailure as exc:
                 error=str(exc)
                 events=[json.loads(line) for line in (traces/'commands.jsonl').read_text().splitlines()]
@@ -155,7 +179,7 @@ def main(argv=None):
                 if completed:observation=completed[-1].get('network')
             result_file=root/(case+'-'+system)/'result.json'
             result=read_json(result_file) if result_file.is_file() else {'status':'blocked'}
-            audit=assess_trace(observation,code,result,case,protocol,error)
+            audit=assess_trace(observation,code,result,case,protocol,binary,error)
             passed=audit['status']=='observed'
             audit_path=root/(case+'-'+system+'-audit.json');write_json_new(audit_path,audit)
             append_event(index,{'event':'finished','attempt_id':attempt['attempt_id'],'case':case,'system':system,'status':audit['status'],'unix_ns':time.time_ns()})

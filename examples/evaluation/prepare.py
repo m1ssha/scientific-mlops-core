@@ -55,6 +55,8 @@ def prepare_baseline(executor,core,work,wheels,core_data):
     dataset='examples/wine/data/wine.data';git('rm','--cached',dataset);dvc('add',dataset)
     refdir=repo/'examples/wine/reference';refdir.mkdir()
     shutil.copyfile(repo/'examples/wine/evidence/main-v1/reference/result/environment.json',refdir/'environment.json')
+    # Source results are recovered only through the separately declared MLflow artifacts.
+    git('rm','-r','examples/wine/evidence','examples/wine_catalog/evidence')
     wheel_dir=repo/'examples/wine/wheels';shutil.copytree(wheels,wheel_dir,copy_function=shutil.copy2)
     wheel_files=sorted(wheel_dir.glob('*.whl'));require(len(wheel_files)==7,'not seven wheels')
     dvc('add','examples/wine/wheels')
