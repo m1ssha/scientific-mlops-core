@@ -96,7 +96,7 @@ without text normalization and hashed after copying.
 
 ## Instrumentation amendment after primary-01
 
-The first authorized series, `primary-01`, stopped at S0 alternative with the
+The first authorized series, `primary-01`, stopped after two started cases at S0 alternative with the
 original functional audit `blocked` and auxiliary network `unchecked`. Its raw
 trace included one unresolved syscall and two writes whose FD annotation had
 `eventfd-count`, `eventfd-id` and `eventfd-semaphore`. The original audit and
@@ -114,3 +114,30 @@ shows the corresponding fdinfo fields; the [eventfd manual](https://man7.org/lin
 describes the counter. Generic `socket:[inode]`, malformed labels and unknown
 syscalls remain unchecked. A separate synthetic test creates a real `os.eventfd`
 and checks its strace annotation; it is not a Wine case.
+
+## Exploratory attribution change after primary-02
+
+The separately authorized `primary-02` series stopped after three started cases at its third case,
+S1/core: the S0 cases for core and the alternative had functional status
+`passed`; S1/core detected a missing dataset and registered a failed attempt,
+but its original functional audit was `blocked` and auxiliary network status
+`unchecked` because the trace contained four unresolved `???` events. The
+original S1 audit is not changed or reassessed. SHA-256 values for the retained
+originals are:
+
+- primary-02 attempts index: `8651858f12d79cb62b0645a8a767b3ec8ef8e11c2b4a9312afdc660641d7f5ed`;
+- S1/core result: `63619492a2c0289fff0228c63a2fc3cb7f12db4d90d0877204fa20db22d9d67b`;
+- S1/core audit: `1c858164b77554117989859d5fdd617832aeb212214237c5a5c2f3ccd6f7da28`;
+- S1/core raw trace: `42f06a452fe17d29de008de9fd199f8d81acfcf75e1120bdf0ad2f49b43eb44c`.
+
+The `v3` attribution rule in the parser is an **exploratory post-attempt
+amendment**, proposed after observing primary-02, not a correction of its v2
+audit or a preregistered success. The current harness continues using the v2
+rule by default. A future reviewed protocol and harness gate must explicitly opt
+in before any new series. The candidate rule attributes an unresolved syscall
+only to a nonroot thread in the complete, temporally consistent thread group of
+one exact byte-checked, non-spawning CLI process. Every observed child of every
+thread in that group must be a `CLONE_THREAD` child; process creation, any extra
+exec, PID reuse, missing lineage or missing normal terminal blocks attribution.
+The event must follow observed group exit. The network result remains unchecked;
+this operational assumption does not prove the absence of hidden processes.

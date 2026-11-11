@@ -29,7 +29,7 @@ def known_eventfd(label):
 
 def classify(text, completed=True):
     result={'status':'pass','inet_activity':[],'probes':[],'unix':[],'unknown':[],'unknown_events':[],
-            'execs':[],'clones':[],'exits':{},'exit_groups':[]}
+            'execs':[],'clones':[],'syscalls':[],'exits':{},'exit_groups':[]}
     def unknown(pid,kind,detail,seq=None):
         result['unknown'].append(detail);result['unknown_events'].append({'pid':int(pid) if pid else None,'kind':kind,'detail':detail,'sequence':seq})
     if not completed:unknown(None,'incomplete','tracer did not finish')
@@ -55,13 +55,18 @@ def classify(text, completed=True):
             continue
         normalized.append((pid,ts,body,seq))
     for pid in pending:unknown(pid,'unfinished','unfinished syscall at EOF')
-    for pid,ts,body,seq in normalized:
+    unknown_pids={x['pid'] for x in result['unknown_events'] if x['kind']=='unknown_syscall'}
+    for pid,ts,body,seq in sorted(normalized,key=lambda item:item[3]):
         if body.startswith('+++'):
+            if pid in result['exits']:unknown(pid,'pid_reuse','duplicate PID terminal',seq)
             result['exits'][pid]={'time':ts,'detail':body,'sequence':seq};continue
+        if pid in result['exits'] and not body.startswith('---'):
+            unknown(pid,'pid_reuse','syscall after PID terminal',seq)
         if body.startswith('---'):continue
         match=CALL.match(body)
         if not match:unknown(pid,'unparsed','unparsed syscall',seq);continue
         call=match.group(1)
+        if int(pid) in unknown_pids:result['syscalls'].append({'pid':int(pid),'call':call,'sequence':seq})
         if call in ('clone','clone3','fork','vfork'):
             child=re.search(r'=\s*(\d+)\s*$',body)
             if child and int(child.group(1))>0:result['clones'].append({'parent':int(pid),'child':int(child.group(1)),'thread':'CLONE_THREAD' in body,'sequence':seq})
@@ -108,31 +113,54 @@ def classify(text, completed=True):
     return result
 
 
-def attribute_unknowns(observation,binary):
-    """Conservative attribution: pinned CLI leaf thread exiting after exit_group only."""
+def attribute_unknowns(observation,binary,*,rule='v2'):
+    """Attribute only a complete, temporally consistent pinned CLI leaf process.
+
+    This is an operational assumption about byte-checked non-spawning source,
+    not a claim that network or every hidden process has been observed.
+    """
+    if rule not in ('v2','v3'):raise ValueError('unsupported attribution rule')
     if observation['status']=='traffic':return None
     if observation['status']=='pass':return []
-    roots={x['pid'] for x in observation['execs'] if x['path']==str(binary)}
+    roots=[x for x in observation['execs'] if x['path']==str(binary) and x['call'].rstrip().endswith('= 0')]
     if not roots:return None
     children=observation['clones'];exits=observation['exits'];attributed=[]
     for unknown in observation['unknown_events']:
-        pid=unknown['pid']
-        if unknown['kind']!='unknown_syscall' or pid is None or unknown['sequence'] is None:return None
-        matched=False
+        pid=unknown['pid'];seq=unknown['sequence']
+        if unknown['kind']!='unknown_syscall' or pid is None or seq is None:return None
+        if sum(x['kind']=='unknown_syscall' and x['pid']==pid for x in observation['unknown_events'])!=1:return None
+        matches=[]
         for root in roots:
-            threads={root};changed=True
-            while changed:
+            root_pid=root['pid'];birth={root_pid:root['sequence']};valid=True;changed=True
+            while changed and valid:
                 changed=False
                 for edge in children:
-                    if edge['thread'] and edge['parent'] in threads and edge['child'] not in threads:
-                        threads.add(edge['child']);changed=True
-            if pid==root or pid not in threads:continue
-            if any(edge['parent']==pid for edge in children):continue
-            if not all(str(t) in exits and exits[str(t)]['detail'].startswith('+++ exited with ') for t in threads):continue
-            group_execs=[x for x in observation['execs'] if x['pid'] in threads]
-            if len(group_execs)!=1 or group_execs[0]['pid']!=root or group_execs[0]['path']!=str(binary):continue
-            if not any(x['pid'] in threads and x['sequence']<unknown['sequence'] for x in observation['exit_groups']):continue
-            if any(x['pid']==pid for x in observation['execs']):continue
-            attributed.append({'pid':pid,'root_pid':root,'kind':unknown['kind'],'sequence':unknown['sequence']});matched=True;break
-        if not matched:return None
+                    parent,child=edge['parent'],edge['child']
+                    if parent not in birth:continue
+                    # Any observed process child makes this group non-leaf.
+                    if not edge['thread'] or child==root_pid:valid=False;break
+                    if child in birth:
+                        if birth[child]!=edge['sequence']:valid=False;break
+                        continue
+                    parent_exit=exits.get(str(parent));child_exit=exits.get(str(child))
+                    if (not parent_exit or not child_exit or edge['sequence']<=birth[parent] or
+                        edge['sequence']>=parent_exit['sequence'] or edge['sequence']>=child_exit['sequence']):
+                        valid=False;break
+                    birth[child]=edge['sequence'];changed=True
+            if not valid or pid==root_pid or pid not in birth:continue
+            # The existing v2 harness never opts in to broader v3 attribution.
+            if rule=='v2' and any(edge['parent']==pid for edge in children):continue
+            if any(not exits.get(str(t),{}).get('detail','').startswith('+++ exited with ') for t in birth):continue
+            group_execs=[x for x in observation['execs'] if x['pid'] in birth]
+            if len(group_execs)!=1 or group_execs[0]!=root:continue
+            if not (birth[pid]<seq<exits[str(pid)]['sequence']):continue
+            if any(x['pid']==pid and seq<x['sequence']<exits[str(pid)]['sequence'] for x in observation['syscalls']):continue
+            # A group exit must begin after its caller was created and before
+            # the unresolved thread event and the caller's normal terminal.
+            if not any(x['pid'] in birth and birth[x['pid']]<x['sequence']<seq and
+                       x['sequence']<exits[str(x['pid'])]['sequence'] for x in observation['exit_groups']):continue
+            matches.append({'pid':pid,'root_pid':root_pid,'kind':unknown['kind'],'sequence':seq})
+        # A single unknown may not be attributed to zero or multiple roots.
+        if len(matches)!=1:return None
+        attributed.append(matches[0])
     return attributed

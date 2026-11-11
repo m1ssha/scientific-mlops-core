@@ -250,3 +250,54 @@ class TestEventFDAnnotation(unittest.TestCase):
    eventfd_writes=[label for label in labels if label=='anon_inode:[eventfd]' or known_eventfd(label)]
    self.assertGreaterEqual(len(eventfd_writes),2,'both actual eventfd writes must have a recognized annotation')
    observation=classify(text);self.assertEqual(observation['status'],'pass',observation['unknown'])
+
+class TestV3LeafProcessAttribution(unittest.TestCase):
+ def trace(self):
+  return '''100 1.000 execve("/p/smlops", ["/p/smlops", "object"], 0) = 0
+100 1.010 clone(child_stack=NULL, flags=CLONE_THREAD) = 101
+101 1.020 clone(child_stack=NULL, flags=CLONE_THREAD) = 102
+102 1.030 clone(child_stack=NULL, flags=CLONE_THREAD) = 103
+100 1.040 exit_group(0 <unfinished ...>
+101 1.050 ???( <unfinished ...>
+100 1.060 <... exit_group resumed>) = ?
+103 1.070 +++ exited with 0 +++
+102 1.080 +++ exited with 0 +++
+101 1.090 +++ exited with 0 +++
+100 1.100 +++ exited with 0 +++
+'''
+ def test_multilevel_threads_nonleaf_unknown_is_attributed_but_network_unchecked(self):
+  from trace import attribute_unknowns
+  observation=classify(self.trace());self.assertEqual(observation['status'],'unchecked')
+  attributed=attribute_unknowns(observation,'/p/smlops',rule='v3');self.assertEqual(attributed[0]['pid'],101)
+  self.assertIsNone(attribute_unknowns(observation,'/p/smlops')) # v2 remains fail-closed
+ def test_nonthread_spawn_from_nonroot_rejects_whole_group(self):
+  from trace import attribute_unknowns
+  raw=self.trace().replace('100 1.040 exit_group', '101 1.035 fork() = 200\n200 1.036 +++ exited with 0 +++\n100 1.040 exit_group')
+  self.assertIsNone(attribute_unknowns(classify(raw),'/p/smlops',rule='v3'))
+  raw=self.trace().replace('100 1.040 exit_group', '102 1.035 clone(child_stack=NULL, flags=SIGCHLD) = 200\n200 1.036 +++ exited with 0 +++\n100 1.040 exit_group')
+  self.assertIsNone(attribute_unknowns(classify(raw),'/p/smlops',rule='v3'))
+ def test_unknown_before_exit_rejected(self):
+  from trace import attribute_unknowns
+  raw=self.trace().replace('100 1.040 exit_group(0 <unfinished ...>\n101 1.050 ???( <unfinished ...>', '101 1.035 ???( <unfinished ...>\n100 1.040 exit_group(0 <unfinished ...>')
+  self.assertIsNone(attribute_unknowns(classify(raw),'/p/smlops',rule='v3'))
+ def test_reexec_and_pid_reuse_rejected(self):
+  from trace import attribute_unknowns
+  raw=self.trace().replace('100 1.040 exit_group', '101 1.035 execve("/other", ["/other"], 0) = 0\n100 1.040 exit_group')
+  self.assertIsNone(attribute_unknowns(classify(raw),'/p/smlops',rule='v3'))
+  raw=self.trace()+'101 1.110 execve("/p/smlops", ["/p/smlops"], 0) = 0\n101 1.120 +++ exited with 0 +++\n'
+  obs=classify(raw);self.assertTrue(any(x['kind']=='pid_reuse' for x in obs['unknown_events']));self.assertIsNone(attribute_unknowns(obs,'/p/smlops',rule='v3'))
+ def test_missing_lineage_missing_terminal_and_temporal_inconsistency_rejected(self):
+  from trace import attribute_unknowns
+  raw=self.trace().replace('100 1.010 clone(child_stack=NULL, flags=CLONE_THREAD) = 101\n','')
+  self.assertIsNone(attribute_unknowns(classify(raw),'/p/smlops',rule='v3'))
+  self.assertIsNone(attribute_unknowns(classify(self.trace().replace('103 1.070 +++ exited with 0 +++\n','')),'/p/smlops',rule='v3'))
+  raw=self.trace().replace('100 1.010 clone(child_stack=NULL, flags=CLONE_THREAD) = 101\n','').replace('101 1.050 ???( <unfinished ...>','101 1.050 ???( <unfinished ...>\n100 1.055 clone(child_stack=NULL, flags=CLONE_THREAD) = 101')
+  self.assertIsNone(attribute_unknowns(classify(raw),'/p/smlops',rule='v3'))
+ def test_syscall_after_unfinished_unknown_rejected(self):
+  from trace import attribute_unknowns
+  raw=self.trace().replace('101 1.050 ???( <unfinished ...>', '101 1.050 ???( <unfinished ...>\n101 1.055 write(1</tmp/log>, \"x\", 1) = 1')
+  self.assertIsNone(attribute_unknowns(classify(raw),'/p/smlops',rule='v3'))
+ def test_unresolved_socket_descriptor_still_blocks(self):
+  from trace import attribute_unknowns
+  raw=self.trace().replace('100 1.040 exit_group','102 1.035 write(7<socket:[123]>, "x", 1) = 1\n100 1.040 exit_group')
+  obs=classify(raw);self.assertEqual(obs['status'],'unchecked');self.assertIsNone(attribute_unknowns(obs,'/p/smlops',rule='v3'))
