@@ -301,3 +301,36 @@ class TestV3LeafProcessAttribution(unittest.TestCase):
   from trace import attribute_unknowns
   raw=self.trace().replace('100 1.040 exit_group','102 1.035 write(7<socket:[123]>, "x", 1) = 1\n100 1.040 exit_group')
   obs=classify(raw);self.assertEqual(obs['status'],'unchecked');self.assertIsNone(attribute_unknowns(obs,'/p/smlops',rule='v3'))
+
+class TestV3CompleteActivityTimeline(unittest.TestCase):
+ def group(self):
+  return '''100 1.000 execve("/p/smlops", ["/p/smlops", "object"], 0) = 0
+100 1.010 clone(child_stack=NULL, flags=CLONE_THREAD) = 101
+100 1.020 clone(child_stack=NULL, flags=CLONE_THREAD) = 102
+100 1.030 exit_group(0 <unfinished ...>
+101 1.040 ???( <unfinished ...>
+100 1.050 <... exit_group resumed>) = ?
+101 1.060 +++ exited with 0 +++
+102 1.070 +++ exited with 0 +++
+100 1.080 +++ exited with 0 +++
+'''
+ def test_unknown_thread_activity_before_clone_blocks(self):
+  from trace import attribute_unknowns
+  raw=self.group().replace('100 1.010 clone', '101 1.005 write(1</tmp/log>, "x", 1) = 1\n100 1.010 clone')
+  obs=classify(raw);self.assertEqual(obs['status'],'unchecked');self.assertIsNone(attribute_unknowns(obs,'/p/smlops',rule='v3'))
+ def test_sibling_activity_before_clone_blocks(self):
+  from trace import attribute_unknowns
+  raw=self.group().replace('100 1.020 clone', '102 1.015 --- SIGURG {si_signo=SIGURG} ---\n100 1.020 clone')
+  self.assertIsNone(attribute_unknowns(classify(raw),'/p/smlops',rule='v3'))
+ def test_activity_after_normal_terminal_blocks(self):
+  from trace import attribute_unknowns
+  raw=self.group().replace('102 1.070 +++ exited with 0 +++\n','102 1.070 +++ exited with 0 +++\n102 1.075 --- SIGURG {si_signo=SIGURG} ---\n')
+  self.assertIsNone(attribute_unknowns(classify(raw),'/p/smlops',rule='v3'))
+ def test_root_may_have_recorded_activity_before_its_exec(self):
+  from trace import attribute_unknowns
+  raw='''1 0.500 execve("/launcher", ["/launcher"], 0) = 0
+1 0.600 clone(child_stack=NULL, flags=SIGCHLD) = 100
+100 0.700 write(1</tmp/log>, "preexec", 7) = 7
+'''+self.group()+'''1 1.100 +++ exited with 0 +++
+'''
+  obs=classify(raw);self.assertEqual(attribute_unknowns(obs,'/p/smlops',rule='v3')[0]['pid'],101)

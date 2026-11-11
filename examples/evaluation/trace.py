@@ -29,7 +29,7 @@ def known_eventfd(label):
 
 def classify(text, completed=True):
     result={'status':'pass','inet_activity':[],'probes':[],'unix':[],'unknown':[],'unknown_events':[],
-            'execs':[],'clones':[],'syscalls':[],'exits':{},'exit_groups':[]}
+            'execs':[],'clones':[],'syscalls':[],'exits':{},'exit_groups':[],'activity':{}}
     def unknown(pid,kind,detail,seq=None):
         result['unknown'].append(detail);result['unknown_events'].append({'pid':int(pid) if pid else None,'kind':kind,'detail':detail,'sequence':seq})
     if not completed:unknown(None,'incomplete','tracer did not finish')
@@ -40,6 +40,7 @@ def classify(text, completed=True):
             if line.strip():unknown(None,'unparsed','unparsed trace line',seq)
             continue
         pid,ts,body=m.groups();observed_pids.add(pid)
+        activity=result['activity'].setdefault(pid,{'first':seq,'last':seq});activity['last']=seq
         if body.startswith('exit_group('):result['exit_groups'].append({'pid':int(pid),'sequence':seq,'time':ts})
         if body.endswith('<unfinished ...>'):
             call=CALL.match(body)
@@ -124,7 +125,7 @@ def attribute_unknowns(observation,binary,*,rule='v2'):
     if observation['status']=='pass':return []
     roots=[x for x in observation['execs'] if x['path']==str(binary) and x['call'].rstrip().endswith('= 0')]
     if not roots:return None
-    children=observation['clones'];exits=observation['exits'];attributed=[]
+    children=observation['clones'];exits=observation['exits'];activity=observation['activity'];attributed=[]
     for unknown in observation['unknown_events']:
         pid=unknown['pid'];seq=unknown['sequence']
         if unknown['kind']!='unknown_syscall' or pid is None or seq is None:return None
@@ -151,6 +152,11 @@ def attribute_unknowns(observation,binary,*,rule='v2'):
             # The existing v2 harness never opts in to broader v3 attribution.
             if rule=='v2' and any(edge['parent']==pid for edge in children):continue
             if any(not exits.get(str(t),{}).get('detail','').startswith('+++ exited with ') for t in birth):continue
+            # Every member's observed activity must fit its lifetime. The root
+            # may have pre-exec activity inherited from its parent; children
+            # cannot act before the clone syscall that created them.
+            if any(str(t) not in activity or activity[str(t)]['last']!=exits[str(t)]['sequence'] or
+                   (t!=root_pid and activity[str(t)]['first']<=birth[t]) for t in birth):continue
             group_execs=[x for x in observation['execs'] if x['pid'] in birth]
             if len(group_execs)!=1 or group_execs[0]!=root:continue
             if not (birth[pid]<seq<exits[str(pid)]['sequence']):continue
