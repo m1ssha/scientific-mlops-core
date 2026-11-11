@@ -13,13 +13,13 @@ def classify(text, completed=True):
     def unknown(pid,kind,detail,seq=None):
         result['unknown'].append(detail);result['unknown_events'].append({'pid':int(pid) if pid else None,'kind':kind,'detail':detail,'sequence':seq})
     if not completed:unknown(None,'incomplete','tracer did not finish')
-    pending={};normalized=[]
+    pending={};normalized=[];observed_pids=set()
     for seq,line in enumerate(text.splitlines()):
         m=PID.match(line)
         if not m:
             if line.strip():unknown(None,'unparsed','unparsed trace line',seq)
             continue
-        pid,ts,body=m.groups()
+        pid,ts,body=m.groups();observed_pids.add(pid)
         if body.startswith('exit_group('):result['exit_groups'].append({'pid':int(pid),'sequence':seq,'time':ts})
         if body.endswith('<unfinished ...>'):
             call=CALL.match(body)
@@ -44,21 +44,45 @@ def classify(text, completed=True):
         call=match.group(1)
         if call in ('clone','clone3','fork','vfork'):
             child=re.search(r'=\s*(\d+)\s*$',body)
-            if child:result['clones'].append({'parent':int(pid),'child':int(child.group(1)),'thread':'CLONE_THREAD' in body,'sequence':seq})
+            if child and int(child.group(1))>0:result['clones'].append({'parent':int(pid),'child':int(child.group(1)),'thread':'CLONE_THREAD' in body,'sequence':seq})
         if call in ('execve','execveat'):
             if '...' in body:unknown(pid,'truncated_exec','truncated exec arguments',seq)
             else:
                 path=re.match(r'^execve\("([^"]+)"',body)
                 result['execs'].append({'pid':int(pid),'time':ts,'call':body,'path':path.group(1) if path else None,'sequence':seq})
-        family='inet' if ('AF_INET' in body or re.search(r'<(?:TCP|UDP)v?\d*[:\[]',body)) else 'unix' if 'AF_UNIX' in body or '<UNIX' in body else None
+        # Quoted payloads are data, not sockaddr or descriptor annotations.
+        structural=re.sub(r'"(?:\\.|[^"\\])*"', '""', body)
+        # Address families come only from socket's domain, sockaddr fields or
+        # descriptor annotations; file names and quoted payloads are not metadata.
+        without_fds=re.sub(r'\d+<[^>]*>', 'FD', structural)
+        inet=(call=='socket' and re.match(r'^socket\(\s*AF_INET6?\b',structural)) or re.search(r'\bsa_family=AF_INET6?\b',without_fds) or re.search(r'(?:\(|,)\s*\d+<(?:TCP|UDP)(?:v6)?[:\[]',structural)
+        unix=(call=='socket' and re.match(r'^socket\(\s*AF_UNIX\b',structural)) or re.search(r'\bsa_family=AF_UNIX\b',without_fds) or re.search(r'(?:\(|,)\s*\d+<UNIX',structural)
+        family='inet' if inet else 'unix' if unix else None
         if call in ('socket','bind') and family=='inet':result['probes'].append(body)
         if call in SEND|INCOMING:
             if family=='inet':result['inet_activity'].append(body)
             elif family=='unix':result['unix'].append(body)
-            elif call in ('connect','send','sendto','sendmsg','sendmmsg','listen','accept','accept4'):unknown(pid,'descriptor',body,seq)
-            elif call in ('write','writev','sendfile','splice'):
+            if call in ('write','writev','sendfile','splice'):
                 arguments=body.split('(',1)[1].split(',');indexes={'write':(0,),'writev':(0,),'sendfile':(0,1),'splice':(0,2)}[call]
-                if any(i>=len(arguments) or not re.fullmatch(r'\s*\d+<[^>]+>\s*',arguments[i]) for i in indexes):unknown(pid,'descriptor',body,seq)
+                for i in indexes:
+                    descriptor=re.fullmatch(r'\s*\d+<(.+)>\s*',arguments[i]) if i<len(arguments) else None
+                    label=descriptor.group(1) if descriptor else ''
+                    # -yy may print socket:[inode] without its family. Such a
+                    # label is not evidence of a regular file or a Unix socket.
+                    known_anon=('anon_inode:[eventfd]','anon_inode:[eventpoll]','anon_inode:[timerfd]','anon_inode:[signalfd]','anon_inode:inotify')
+                    if not (label.startswith(('/', 'pipe:', 'UNIX', 'TCP:', 'TCPv6:', 'UDP:', 'UDPv6:')) or label in known_anon):
+                        unknown(pid,'descriptor',body,seq)
+            elif family is None:
+                unknown(pid,'descriptor',body,seq)
+    successful_execs=[x for x in result['execs'] if x['call'].rstrip().endswith('= 0')]
+    if not successful_execs:unknown(None,'incomplete_trace','missing initial successful exec')
+    else:
+        initial=min(successful_execs,key=lambda x:x['sequence']);root=str(initial['pid'])
+        calls=[(seq,pid,body) for pid,ts,body,seq in normalized if CALL.match(body)]
+        if not calls or min(calls)[0]!=initial['sequence']:unknown(None,'incomplete_trace','trace does not begin with root exec')
+        if root not in result['exits']:unknown(int(root),'incomplete_trace','missing root terminal')
+    for pid in observed_pids | {str(x['child']) for x in result['clones']}:
+        if pid not in result['exits']:unknown(int(pid),'incomplete_trace','missing traced PID terminal')
     if result['inet_activity']:result['status']='traffic'
     elif result['unknown']:result['status']='unchecked'
     return result

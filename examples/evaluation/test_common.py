@@ -4,6 +4,9 @@ from pathlib import Path
 from common import append_event,digest,mutation,new_root,read_json,safe_copy_tree
 from trace import classify
 
+def complete(call):
+ return '1 execve("/bin/test", ["/bin/test"], 0) = 0\n'+call+'\n1 +++ exited with 0 +++\n'
+
 class TestEvaluation(unittest.TestCase):
  def test_mutation_and_copy(self):
   with tempfile.TemporaryDirectory() as tmp:
@@ -22,9 +25,9 @@ class TestEvaluation(unittest.TestCase):
    path=Path(tmp)/'index';append_event(path,{'event':'started'});append_event(path,{'event':'failed'})
    self.assertEqual(len(path.read_text().splitlines()),2)
  def test_trace_cases(self):
-  self.assertEqual(classify('1 socket(AF_INET6, SOCK_STREAM, IPPROTO_IP) = 3<TCPv6:[1]>\n1 bind(3<TCPv6:[1]>, {sa_family=AF_INET6}, 28) = 0\n1 +++ exited with 0 +++')['status'],'pass')
+  self.assertEqual(classify(complete('1 socket(AF_INET6, SOCK_STREAM, IPPROTO_IP) = 3<TCPv6:[1]>\n1 bind(3<TCPv6:[1]>, {sa_family=AF_INET6}, 28) = 0'))['status'],'pass')
   self.assertEqual(classify('1 connect(3<TCP:[1]>, {sa_family=AF_INET}, 16) = 0')['status'],'traffic')
-  self.assertEqual(classify('1 connect(3<UNIX-STREAM:[1]>, {sa_family=AF_UNIX}, 16) = 0')['status'],'pass')
+  self.assertEqual(classify(complete('1 connect(3<UNIX-STREAM:[1]>, {sa_family=AF_UNIX}, 16) = 0'))['status'],'pass')
   self.assertEqual(classify('1 sendto(3, "x", 1, 0, NULL, 0) = 1')['status'],'unchecked')
   self.assertEqual(classify('1 execve("/bin/false", ["..."], 0x0) = 0')['status'],'unchecked')
   self.assertEqual(classify('',False)['status'],'unchecked')
@@ -32,7 +35,7 @@ if __name__=='__main__':unittest.main()
 
 class TestTraceReassembly(unittest.TestCase):
  def test_matching_and_orphans(self):
-  trace='1 wait4(2,  <unfinished ...>\n2 +++ exited with 0 +++\n1 <... wait4 resumed>NULL, 0, NULL) = 2\n1 +++ exited with 0 +++\n'
+  trace='1 execve("/bin/test", ["/bin/test"], 0) = 0\n1 wait4(2,  <unfinished ...>\n2 +++ exited with 0 +++\n1 <... wait4 resumed>NULL, 0, NULL) = 2\n1 +++ exited with 0 +++\n'
   self.assertEqual(classify(trace)['status'],'pass')
   self.assertEqual(classify('1 wait4(2, <unfinished ...>')['status'],'unchecked')
   self.assertEqual(classify('1 <... wait4 resumed>NULL) = 1')['status'],'unchecked')
@@ -182,4 +185,40 @@ class TestNormalExit(unittest.TestCase):
  def test_nonreturning_exit_group_is_not_unknown(self):
   cases=['1 1.0 exit_group(0) = ?\n1 1.1 +++ exited with 0 +++\n',
          '1 1.0 exit_group(0 <unfinished ...>\n1 1.1 <... exit_group resumed>) = ?\n1 1.2 +++ exited with 0 +++\n']
-  for case in cases:self.assertEqual(classify(case)['status'],'pass')
+  for case in cases:self.assertEqual(classify('1 0.9 execve("/bin/test", ["/bin/test"], 0) = 0\n'+case)['status'],'pass')
+
+class TestUnknownSocketDescriptors(unittest.TestCase):
+ def test_all_transfer_calls_and_each_descriptor(self):
+  from trace import attribute_unknowns
+  calls=['write(7<socket:[123]>, "x", 1)',
+         'writev(7<socket:[123]>, [{iov_base="x", iov_len=1}], 1)',
+         'sendfile(8</tmp/file>, 7<socket:[123]>, NULL, 1)',
+         'sendfile(7<socket:[123]>, 8</tmp/file>, NULL, 1)',
+         'splice(8</tmp/file>, NULL, 7<socket:[123]>, NULL, 1, 0)',
+         'splice(7<socket:[123]>, NULL, 8<UNIX-STREAM:[44]>, NULL, 1, 0)',
+         'write(7<anon_inode:[unknown]>, "x", 1)']
+  for call in calls:
+   with self.subTest(call=call):
+    obs=classify('1 '+call+' = 1\n');self.assertEqual(obs['status'],'unchecked');self.assertIsNone(attribute_unknowns(obs,'/p/smlops'))
+  for call in ('write(7<TCP:[123]>, "x", 1)', 'sendfile(8</tmp/file>, 7<TCPv6:[123]>, NULL, 1)', 'splice(7<socket:[123]>, NULL, 8<TCP:[44]>, NULL, 1, 0)'):
+   with self.subTest(call=call):self.assertEqual(classify('1 '+call+' = 1\n')['status'],'traffic')
+
+class TestTraceCompletenessAndPayload(unittest.TestCase):
+ def test_payload_is_not_network_metadata(self):
+  for call in ('write(1</tmp/log>, "AF_INET", 7)',
+               'write(1</tmp/log>, "<TCP:[4]> AF_INET6", 18)',
+               'write(2<UNIX-STREAM:[7]>, "AF_INET <TCP:[4]>", 17)',
+               'write(7<anon_inode:[eventfd]>, "AF_INET", 7)',
+               'write(1</tmp/socket(AF_INET>, "ordinary", 8)',
+               'write(1</tmp/sa_family=AF_INET>, "ordinary", 8)'):
+   with self.subTest(call=call):self.assertEqual(classify(complete('1 '+call+' = 7'))['status'],'pass')
+ def test_empty_truncated_and_missing_child_are_unchecked(self):
+  from trace import attribute_unknowns
+  traces=['', '1 execve("/bin/test", ["/bin/test"], 0) = 0\n',
+          '1 execve("/bin/test", ["/bin/test"], 0) = 0\n1 clone(child_stack=NULL, flags=SIGCHLD) = 2\n1 +++ exited with 0 +++\n',
+          '1 write(1</tmp/log>, "x", 1) = 1\n1 execve("/bin/test", ["/bin/test"], 0) = 0\n1 +++ exited with 0 +++\n']
+  for text in traces:
+   with self.subTest(text=text):
+    result=classify(text);self.assertEqual(result['status'],'unchecked');self.assertIsNone(attribute_unknowns(result,'/bin/test'))
+    from harness import assess_trace
+    audit=assess_trace(result,0,{'status':'observed'},'S1',{'cases':{'S1':{'training_calls_expected':0}}},'/bin/test');self.assertEqual(audit['functional_status'],'blocked')
