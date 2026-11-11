@@ -7,7 +7,9 @@ from verify_demo import manifest, safe_new_work, verify
 
 class DemoSafetyTest(unittest.TestCase):
     def test_rejects_existing_overlap_and_symlink_ancestor(self):
-        with tempfile.TemporaryDirectory() as tmp:
+        # The production guard intentionally rejects work inside any checkout,
+        # so this positive fixture must not inherit a TMPDIR inside one.
+        with tempfile.TemporaryDirectory(prefix='scientific-mlops-demo-test-', dir='/var/tmp') as tmp:
             root = Path(tmp)
             checkout = root / 'checkout'
             checkout.mkdir()
