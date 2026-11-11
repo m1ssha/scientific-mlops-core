@@ -21,7 +21,7 @@ from trace import attribute_unknowns
 HERE=Path(__file__).resolve().parent
 REPO=HERE.parents[1]
 CORE='5c37e250896fbb67670e7a1897853f78baec144d'
-PLAN='107cf252e799b5f0f8e187abec431dab80f4ab84'
+PLAN='4c895e288b90f2f13a95a6bed85f11b5258bdc87'
 NAMES=('result.json','predictions.csv','metrics.json','model.json','environment.json')
 
 def gate(reviewed):
@@ -29,7 +29,7 @@ def gate(reviewed):
     require(reviewed==head,'reviewed SHA must match checked-out harness HEAD')
     require(subprocess.run(['git','merge-base','--is-ancestor',PLAN,head],cwd=REPO).returncode==0,'approved protocol not in history')
     require(not subprocess.check_output(['git','status','--porcelain','--untracked-files=all'],cwd=REPO,text=True).strip(),'harness checkout not clean')
-    for path in ('docs/evaluation/protocol-v1.json','docs/evaluation/protocol-v2.json','docs/evaluation-plan.md','docs/evaluation/dvc-tools.txt','docs/evaluation/mlflow-tools.txt'):
+    for path in ('docs/evaluation/protocol-v1.json','docs/evaluation/protocol-v2.json','docs/evaluation/protocol-v3.json','docs/evaluation-plan-v1.md','docs/evaluation-plan-v2.md','docs/evaluation-plan.md','docs/evaluation/dvc-tools.txt','docs/evaluation/mlflow-tools.txt','docs/evaluation/evidence-instrumentation/attempts-v2.json','docs/evaluation/evidence-instrumentation/observation.json','docs/evaluation/evidence-instrumentation/synthetic-object-get.trace.txt'):
         pinned=subprocess.check_output(['git','show',PLAN+':'+path],cwd=REPO)
         require((REPO/path).read_bytes()==pinned,'approved plan or lock changed: '+path)
     return head
@@ -86,7 +86,7 @@ def run_one(root,case,system,args,protocol,head,attempt,binary,binary_digest):
     work=root/(case+'-'+system);work.mkdir(mode=0o700)
     logs=work/'commands';logs.mkdir();executor=Executor(logs,time.monotonic()+protocol['timeouts_seconds']['case'],trace_children=False)
     executor.env=clean_environment(work,args.dvc);executor.python=args.control_python;executor.wine_python=args.wine_python;executor.dvc=args.dvc;executor.attempt_id=attempt['attempt_id']
-    outcome={'case':case,'system':system,'attempt_id':executor.attempt_id,'harness_commit':head,'protocol_sha256':digest(REPO/'docs/evaluation/protocol-v2.json')['sha256'],'stages':{},'status':'blocked'}
+    outcome={'case':case,'system':system,'attempt_id':executor.attempt_id,'harness_commit':head,'protocol_sha256':digest(REPO/'docs/evaluation/protocol-v3.json')['sha256'],'stages':{},'status':'blocked'}
     try:
         require(digest(binary)==binary_digest,'pinned CLI changed before case')
         core=verified_core(executor,args.core_source,work)
@@ -130,14 +130,14 @@ def assess_trace(observation,code,result,case,protocol,binary,error=None):
     training=[dict(entry) for entry in (observation or {}).get('execs',[]) if 'pipeline.py' in entry['call'] and '"run"' in entry['call']]
     for entry in training:
         entry['exit']=(observation or {}).get('exits',{}).get(str(entry['pid']))
-    attributed=attribute_unknowns(observation,binary) if observation else None
+    attributed=attribute_unknowns(observation,binary,rule='v3') if observation else None
     functional=(error is None and code==0 and result['status']=='observed' and observation and observation['status']!='traffic' and attributed is not None and len(training)==protocol['cases'][case]['training_calls_expected'])
     if functional and training:
         functional=all(x.get('time') and x.get('exit') and x['exit'].get('time') and '"validation"' in x['call'] and x['call'].rstrip().endswith('= 0') for x in training)
     auxiliary='observed_no_forbidden_events' if observation and observation['status']=='pass' else (observation or {}).get('status','unchecked')
     return {'status':'observed' if functional else 'blocked','functional_status':'passed' if functional else 'blocked',
             'network_status':auxiliary,'network':observation,'training_execs_all':training,'attributed_unknowns':attributed,
-            'functional_assumption':'only pinned byte-checked CLI leaf thread after exit_group may be attributed; network remains unchecked',
+            'functional_assumption':'post-amendment-v3: byte-checked, source-audited non-spawning CLI leaf process with a complete temporally ordered thread group; network remains unchecked',
             'error':error,'exit':code}
 
 def main(argv=None):
@@ -147,10 +147,10 @@ def main(argv=None):
     p.add_argument('--reviewed-commit',required=True,help='exact reviewed clean harness commit; required only after review')
     a=p.parse_args(argv)
     try:
-        head=gate(a.reviewed_commit);protocol=read_json(REPO/'docs/evaluation/protocol-v2.json')
+        head=gate(a.reviewed_commit);protocol=read_json(REPO/'docs/evaluation/protocol-v3.json')
         protected=[REPO,a.core_source,a.platform_source,a.wheelhouse]
         root=new_root(a.work,protected);index=root/'attempts.jsonl'
-        write_json_new(root/'series.json',{'harness_commit':head,'protocol':protocol,'started_ns':time.time_ns()})
+        write_json_new(root/'series.json',{'harness_commit':head,'protocol':protocol,'protocol_sha256':digest(REPO/'docs/evaluation/protocol-v3.json')['sha256'],'started_ns':time.time_ns()})
         setup=root/'tool-setup';setup.mkdir();logs=setup/'commands';logs.mkdir()
         append_event(index,{'event':'tool_setup_started','unix_ns':time.time_ns()})
         ex=Executor(logs,time.monotonic()+protocol['timeouts_seconds']['case']);ex.env=clean_environment(setup,a.dvc)

@@ -15,7 +15,7 @@ The runner accepts `--work`, `--core-source` (full Git history),
 `--platform-source`, `--wheelhouse`, `--go`, `--dvc`, `--control-python`,
 `--wine-python`, `--mlflow-python`, and `--reviewed-commit`. All paths refer to
 local tools/assets. Both control environments must match the full checked-in
-locks, and tool versions must match protocol-v2.json. These checks run before
+locks, and tool versions must match protocol-v3.json. These checks run before
 the series. Go is configured without telemetry or network package resolution.
 
 Before the eight cases, the pinned core checkout is verified against Git objects
@@ -25,8 +25,8 @@ offline pass. The binary SHA-256 is rechecked in every case. This build is not
 recovery, training, or an input/output cache. Per-case setup, recovery and
 execution are separately traced and any ambiguous or incomplete network trace remains unchecked. Observed forbidden
 traffic blocks the series. A functional result may proceed only when each unknown
-is attributed to a leaf thread of the pinned, source-audited CLI in its observed
-exit sequence; unknown Wine, Python, DVC or unclassified events block it. This
+is attributed to the complete, temporally ordered thread group of the pinned,
+source-audited non-spawning CLI leaf process in its observed exit sequence; unknown Wine, Python, DVC or unclassified events block it. This
 operational attribution is recorded explicitly and is not proof that hidden
 processes cannot exist. Local binds/socket probes are distinguished from traffic.
 
@@ -130,11 +130,11 @@ originals are:
 - S1/core audit: `1c858164b77554117989859d5fdd617832aeb212214237c5a5c2f3ccd6f7da28`;
 - S1/core raw trace: `42f06a452fe17d29de008de9fd199f8d81acfcf75e1120bdf0ad2f49b43eb44c`.
 
-The `v3` attribution rule in the parser is an **exploratory post-attempt
-amendment**, proposed after observing primary-02, not a correction of its v2
-audit or a preregistered success. The current harness continues using the v2
-rule by default. A future reviewed protocol and harness gate must explicitly opt
-in before any new series. The candidate rule attributes an unresolved syscall
+The `v3` attribution rule is an **exploratory post-attempt amendment**,
+adopted after observing primary-02, not a correction of its v2 audit or a
+preregistered success. This harness explicitly selects v3; the exact harness
+commit still requires independent review and separate authorization before
+any new series. The candidate rule attributes an unresolved syscall
 only to a nonroot thread in the complete, temporally consistent thread group of
 one exact byte-checked, non-spawning CLI process. Every observed child of every
 thread in that group must be a `CLONE_THREAD` child; process creation, any extra

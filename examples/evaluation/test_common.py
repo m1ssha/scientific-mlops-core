@@ -99,25 +99,39 @@ class TestAdapters(unittest.TestCase):
    self.assertNotEqual(source,attempt);self.assertEqual(before,tracker.get(source));self.assertEqual(tracker.get(attempt)['info']['status'],'FAILED')
 
 class TestExport(unittest.TestCase):
- def test_refuses_incomplete_and_copies_raw(self):
+ def test_protocol_identity_completeness_and_raw_bytes(self):
   import json
-  from export import export,NAMES
+  from export import export,NAMES,PROTOCOL_PATH
   with tempfile.TemporaryDirectory() as tmp:
-   root=Path(tmp);work=root/'work';work.mkdir();(work/'series.json').write_text(json.dumps({'harness_commit':'test','protocol':{'case_order':[['S0','core']]}}))
-   index=work/'attempts.jsonl';index.write_text(json.dumps({'event':'tool_setup_finished','status':'complete'})+'\n'+json.dumps({'event':'started','case':'S0','system':'core','attempt_id':'id'})+'\n')
+   root=Path(tmp);work=root/'work';work.mkdir();protocol=read_json(PROTOCOL_PATH);sha=digest(PROTOCOL_PATH)['sha256']
+   series={'harness_commit':'test-head','protocol':protocol,'protocol_sha256':sha};(work/'series.json').write_text(json.dumps(series))
+   index=work/'attempts.jsonl';index.write_text(json.dumps({'event':'tool_setup_finished','status':'complete'})+'\n')
    with self.assertRaises(ValueError):export(work,root/'incomplete')
    tool=work/'tool-setup';tool.mkdir();(tool/'manifest.json').write_text(json.dumps({'core_commit':'sha','cli':{'sha256':'dummy'},'source_audit':{'files':{}}}))
    for role in ('source','repeat'):
     d=work/role;d.mkdir()
     for name in NAMES:(d/name).write_bytes((role+':'+name+'\r\n').encode())
-   case=work/'S0-core';case.mkdir();(case/'commands').mkdir();(case/'commands/commands.jsonl').write_text('private log')
-   (work/'case-traces').mkdir();(work/'case-traces/001.trace').write_text('private trace')
-   stage={'history_unchanged':True,'native_report':{'registration':'confirmed','execution':'succeeded','runtime':'passed','numerical':'pass','material_checks':[{'key':'input:sample','check':'missing','required':True,'detail':'/private/diagnostic'}],'blockers':[{'material_key':'input:sample','code':'missing','message':'/private/diagnostic'}]},'common_checks':[{'key':'input:sample','status':'missing','required':True,'detail':'/private/diagnostic'}],'training_execs_all':[{'pid':1}],'source_output_dir':str(work/'source'),'repeat_output_dir':str(work/'repeat')}
-   (case/'result.json').write_text(json.dumps({'status':'observed','attempt_id':'id','stages':stage}))
-   with index.open('a') as f:f.write(json.dumps({'event':'finished','case':'S0','system':'core','attempt_id':'id','status':'observed'})+'\n')
-   (work/'S0-core-audit.json').write_text(json.dumps({'status':'observed','functional_status':'passed','network_status':'observed_no_forbidden_events','attributed_unknowns':[],'functional_assumption':'test','network':{'status':'pass'},'training_execs_all':[{'pid':1}]}))
+   (work/'case-traces').mkdir()
+   for number,(case_id,system) in enumerate(protocol['case_order'],1):
+    attempt=f'id-{number}';case=work/(case_id+'-'+system);case.mkdir();(case/'commands').mkdir();(case/'commands/commands.jsonl').write_text('private log')
+    (work/'case-traces'/f'{number:03}.trace').write_text('private trace')
+    stage={'history_unchanged':True,'native_report':{'registration':'confirmed','execution':'succeeded','runtime':'passed','numerical':'pass','material_checks':[{'key':'input:sample','check':'missing','required':True,'detail':'/private/diagnostic'}],'blockers':[{'material_key':'input:sample','code':'missing','message':'/private/diagnostic'}]},'common_checks':[{'key':'input:sample','status':'missing','required':True,'detail':'/private/diagnostic'}],'source_output_dir':str(work/'source'),'repeat_output_dir':str(work/'repeat')}
+    result={'status':'observed','attempt_id':attempt,'stages':stage,'protocol_sha256':sha,'harness_commit':'test-head'};(case/'result.json').write_text(json.dumps(result))
+    with index.open('a') as f:
+     for event in ('started','finished'):f.write(json.dumps({'event':event,'case':case_id,'system':system,'attempt_id':attempt,'status':'observed'})+'\n')
+    (work/(case_id+'-'+system+'-audit.json')).write_text(json.dumps({'status':'observed','functional_status':'passed','network_status':'unchecked','attributed_unknowns':[],'functional_assumption':'test','network':{'status':'unchecked'},'training_execs_all':[{'pid':1}]}))
    export(work,root/'out');self.assertEqual((root/'out/S0-core/repeat/predictions.csv').read_bytes(),(work/'repeat/predictions.csv').read_bytes())
-   public=(root/'out/results.json').read_text();self.assertNotIn(str(work),public);self.assertNotIn('/private/diagnostic',public);self.assertIn('input:sample',public)
+   public=(root/'out/results.json').read_text();out=json.loads(public);self.assertNotIn(str(work),public);self.assertNotIn('/private/diagnostic',public);self.assertIn('input:sample',public)
+   self.assertEqual((out['protocol_schema_version'],out['series_label'],out['protocol_sha256']),(3,'post-amendment-v3',sha));self.assertEqual(len(out['cases']),8)
+   path=work/'S2-core/result.json';bad=json.loads(path.read_text());bad['protocol_sha256']='0'*64;path.write_text(json.dumps(bad))
+   with self.assertRaises(ValueError):export(work,root/'bad-case')
+   self.assertFalse((root/'bad-case').exists())
+   bad['protocol_sha256']=sha;bad['harness_commit']='wrong';path.write_text(json.dumps(bad))
+   with self.assertRaises(ValueError):export(work,root/'bad-head')
+   bad['harness_commit']='test-head';path.write_text(json.dumps(bad));series['protocol_sha256']='0'*64;(work/'series.json').write_text(json.dumps(series))
+   with self.assertRaises(ValueError):export(work,root/'bad-series-sha')
+   series['protocol_sha256']=sha;series['protocol']['series_label']='wrong';(work/'series.json').write_text(json.dumps(series))
+   with self.assertRaises(ValueError):export(work,root/'bad-series')
 
 class TestObservedTraffic(unittest.TestCase):
  def test_unknown_is_never_pass(self):
@@ -270,6 +284,9 @@ class TestV3LeafProcessAttribution(unittest.TestCase):
   observation=classify(self.trace());self.assertEqual(observation['status'],'unchecked')
   attributed=attribute_unknowns(observation,'/p/smlops',rule='v3');self.assertEqual(attributed[0]['pid'],101)
   self.assertIsNone(attribute_unknowns(observation,'/p/smlops')) # v2 remains fail-closed
+  from harness import assess_trace
+  audit=assess_trace(observation,0,{'status':'observed'},'S1',{'cases':{'S1':{'training_calls_expected':0}}},'/p/smlops')
+  self.assertEqual((audit['functional_status'],audit['network_status']),('passed','unchecked'))
  def test_nonthread_spawn_from_nonroot_rejects_whole_group(self):
   from trace import attribute_unknowns
   raw=self.trace().replace('100 1.040 exit_group', '101 1.035 fork() = 200\n200 1.036 +++ exited with 0 +++\n100 1.040 exit_group')
@@ -334,3 +351,23 @@ class TestV3CompleteActivityTimeline(unittest.TestCase):
 '''+self.group()+'''1 1.100 +++ exited with 0 +++
 '''
   obs=classify(raw);self.assertEqual(attribute_unknowns(obs,'/p/smlops',rule='v3')[0]['pid'],101)
+
+class TestFrozenGate(unittest.TestCase):
+ def test_all_protocol_archives_and_locks_are_byte_pinned(self):
+  import subprocess
+  from unittest.mock import patch
+  import harness
+  files=('docs/evaluation/protocol-v1.json','docs/evaluation/protocol-v2.json','docs/evaluation/protocol-v3.json','docs/evaluation-plan-v1.md','docs/evaluation-plan-v2.md','docs/evaluation-plan.md','docs/evaluation/dvc-tools.txt','docs/evaluation/mlflow-tools.txt','docs/evaluation/evidence-instrumentation/attempts-v2.json','docs/evaluation/evidence-instrumentation/observation.json','docs/evaluation/evidence-instrumentation/synthetic-object-get.trace.txt')
+  with tempfile.TemporaryDirectory() as tmp:
+   root=Path(tmp)
+   def git(*args):return subprocess.check_output(['git',*args],cwd=root,stderr=subprocess.DEVNULL,text=True).strip()
+   git('init','-q');git('config','user.name','Synthetic Test');git('config','user.email','test@example.invalid')
+   for name in files:
+    path=root/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_text('original '+name)
+   git('add','.');git('commit','-qm','frozen');plan=git('rev-parse','HEAD')
+   with patch.object(harness,'REPO',root),patch.object(harness,'PLAN',plan):
+    self.assertEqual(harness.gate(plan),plan)
+    for name in files:
+     with self.subTest(path=name):
+      git('reset','--hard',plan);(root/name).write_text('changed');git('add',name);git('commit','-qm','change frozen file');head=git('rev-parse','HEAD')
+      with self.assertRaisesRegex(ValueError,'approved plan or lock changed'):harness.gate(head)
