@@ -1,0 +1,114 @@
+{
+  "baseline_execution": [
+    "dvc repro --force --no-run-cache",
+    "git add required DVC descriptors and metrics",
+    "dvc exp save --name ATTEMPT_UUID"
+  ],
+  "case_order": [
+    [
+      "S0",
+      "core"
+    ],
+    [
+      "S0",
+      "alternative"
+    ],
+    [
+      "S1",
+      "core"
+    ],
+    [
+      "S1",
+      "alternative"
+    ],
+    [
+      "S2",
+      "core"
+    ],
+    [
+      "S2",
+      "alternative"
+    ],
+    [
+      "S3",
+      "core"
+    ],
+    [
+      "S3",
+      "alternative"
+    ]
+  ],
+  "cases": {
+    "S0": {
+      "execution": "succeeded",
+      "materials": "verified",
+      "mutation": "none",
+      "numerical": "pass",
+      "registration": "confirmed",
+      "runtime": "passed",
+      "training_calls_expected": 1
+    },
+    "S1": {
+      "mutation": "remove registered required dataset object from all permitted recovery copies",
+      "numerical": "unchecked",
+      "training_calls_expected": 0
+    },
+    "S2": {
+      "mutation": "change same-length bytes of that dataset object",
+      "numerical": "unchecked",
+      "training_calls_expected": 0
+    },
+    "S3": {
+      "mutation": "remove one required wheel from all permitted recovery copies",
+      "numerical": "unchecked",
+      "training_calls_expected": 0
+    }
+  },
+  "control": "C2=2.0 current without training; target historical C1=1.0",
+  "network": "strace observed process-tree traffic; no sandbox guarantee; report connect/send separately from bind/probes",
+  "no_claims": [
+    "speed advantage",
+    "statistical significance",
+    "portability",
+    "generalization",
+    "novelty",
+    "global absence of alternate source copies"
+  ],
+  "oracle": {
+    "criterion": "exact raw predictions/counts/Fraction metrics under identical mandatory environment",
+    "function": "oracle",
+    "path": "examples/wine_catalog/validate_cycle.py",
+    "sha256": "7130855433ba33f9cdd29ea9a2ab72fe62d129eaf07fad30fd421ba0e810c33d"
+  },
+  "pre_trial_gate": [
+    "plan merged after independent review",
+    "harness reviewed and committed before any Wine trial",
+    "versions/tool locks match",
+    "every source byte verified",
+    "all attempted runs retained, including harness failures"
+  ],
+  "schema_version": 1,
+  "source": "Wine main-v1 saved reference; imported caller_reported, no setup training",
+  "status": "preregistered_after_independent_review_and_main_merge",
+  "systems": [
+    "scientific-mlops-core+external-wine-repeat",
+    "git+dvc+mlflow+scenario-adapter"
+  ],
+  "tool_locks": {
+    "dvc-tools.txt": "527f03ddd7304f847ed247af2a859b31b7aef3b983c0e5208049a837863868c6",
+    "mlflow-tools.txt": "bdd6fa801f3d8f5f30a6f44f7a29b664594e9f9b76c4424ed8036df2100aaa2d"
+  },
+  "versions": {
+    "SQLAlchemy": "2.1.8",
+    "alembic": "1.20.1",
+    "core": "5c37e250896fbb67670e7a1897853f78baec144d",
+    "dvc": "3.67.1",
+    "git": "2.53.0",
+    "go": "1.27.3",
+    "mlflow-skinny": "3.18.0",
+    "platform": "8834058357a905dc016b1a7b6101b65cb43f846c",
+    "python": "3.12.15",
+    "sqlparse": "0.6.1",
+    "strace": "6.19"
+  }
+}
