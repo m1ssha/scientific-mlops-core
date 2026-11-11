@@ -1,0 +1,74 @@
+{
+  "dummy": {
+    "accuracy": {
+      "denominator": 5,
+      "numerator": 2,
+      "value": 0.4
+    },
+    "balanced_accuracy": {
+      "denominator": 3,
+      "numerator": 1,
+      "value": 0.3333333333333333
+    },
+    "confusion_matrix": [
+      [
+        0,
+        15,
+        0
+      ],
+      [
+        0,
+        18,
+        0
+      ],
+      [
+        0,
+        12,
+        0
+      ]
+    ],
+    "correct": 18,
+    "n": 45,
+    "support": [
+      15,
+      18,
+      12
+    ]
+  },
+  "model": {
+    "accuracy": {
+      "denominator": 1,
+      "numerator": 1,
+      "value": 1.0
+    },
+    "balanced_accuracy": {
+      "denominator": 1,
+      "numerator": 1,
+      "value": 1.0
+    },
+    "confusion_matrix": [
+      [
+        15,
+        0,
+        0
+      ],
+      [
+        0,
+        18,
+        0
+      ],
+      [
+        0,
+        0,
+        12
+      ]
+    ],
+    "correct": 45,
+    "n": 45,
+    "support": [
+      15,
+      18,
+      12
+    ]
+  }
+}

@@ -1,0 +1,200 @@
+{
+  "cases": [
+    {
+      "attempt_id": "9cabfdba85ad44ea8462ffd890a82460",
+      "case": "S0",
+      "functional_status": "passed",
+      "history_unchanged": true,
+      "immutable_original_hashes": {
+        "S0-core-audit.json": {
+          "sha256": "a96daaddba7bbe449581953c8763fcc0834d0df5e7221374afeab403c28dc9ba",
+          "size": 297309
+        },
+        "S0-core/result.json": {
+          "sha256": "4f4af0cb538a7b1be6f016ff5c08943cc04d52f7c5a8e5661d4241e2bbedee79",
+          "size": 15533
+        },
+        "case-traces/001.trace": {
+          "sha256": "b0817a5becdeea9fff70185087807941cbcd330083f7210f634343b40a34584b",
+          "size": 61571095
+        }
+      },
+      "network_status": "unchecked",
+      "stage_observations": {
+        "execution": "succeeded",
+        "materials": "verified",
+        "numerical": "pass",
+        "registration": "confirmed",
+        "runtime": "passed"
+      },
+      "system": "core",
+      "training_execs_observed": 1,
+      "worker_status": "observed"
+    },
+    {
+      "attempt_id": "c2a38ed566b642e8b200a0b93aba8865",
+      "case": "S0",
+      "functional_status": "passed",
+      "history_unchanged": true,
+      "immutable_original_hashes": {
+        "S0-alternative-audit.json": {
+          "sha256": "d681804dabaf2b70fc737288ad86bbd782da10cea9efd0cf5e5298834d886747",
+          "size": 289674
+        },
+        "S0-alternative/result.json": {
+          "sha256": "96670da8fdc414d20b4ebcf178a6700f1cda5d076865450814f0c71708491fa6",
+          "size": 5553
+        },
+        "case-traces/002.trace": {
+          "sha256": "cbaffbdef800877244da4acf70b1c16d288e57aeb8fd343cfe0c2d215ca35d8d",
+          "size": 78887523
+        }
+      },
+      "network_status": "observed_no_forbidden_events",
+      "stage_observations": {
+        "execution": "succeeded",
+        "materials": "verified",
+        "numerical": "pass",
+        "registration": "confirmed",
+        "runtime": "passed"
+      },
+      "system": "alternative",
+      "training_execs_observed": 1,
+      "worker_status": "observed"
+    },
+    {
+      "attempt_id": "27d3540044154704b665eb0e165ca69e",
+      "case": "S1",
+      "functional_status": "passed",
+      "history_unchanged": true,
+      "immutable_original_hashes": {
+        "S1-core-audit.json": {
+          "sha256": "12db4706aa9a7de2e24c20916a940f68d0933986c833b280756d7d76f7c91365",
+          "size": 185844
+        },
+        "S1-core/result.json": {
+          "sha256": "ff31f8974a088566606d177f9dee2b1d9d59375981bc9d4ee880de7b9ded9071",
+          "size": 8370
+        },
+        "case-traces/003.trace": {
+          "sha256": "27197e7336cf87563ce74d40c0382eb1e0e6670e8fc6a46586704af81d5b9038",
+          "size": 30738562
+        }
+      },
+      "network_status": "unchecked",
+      "stage_observations": {
+        "execution": "unchecked",
+        "materials": "failed",
+        "numerical": "unchecked",
+        "registration": "confirmed",
+        "runtime": "unchecked"
+      },
+      "system": "core",
+      "training_execs_observed": 0,
+      "worker_status": "observed"
+    },
+    {
+      "attempt_id": "a03cd00271b849bcb4688d3ab521b625",
+      "case": "S1",
+      "functional_status": "passed",
+      "history_unchanged": true,
+      "immutable_original_hashes": {
+        "S1-alternative-audit.json": {
+          "sha256": "7891af800fb29673c2c5ec121218f7b80e5f104de471ec12e99da16bcc0a8715",
+          "size": 251368
+        },
+        "S1-alternative/result.json": {
+          "sha256": "55b79046d79ed635b023de5fcc5cd491f73fce2dd5d69987519cf51dba4b3b8b",
+          "size": 3551
+        },
+        "case-traces/004.trace": {
+          "sha256": "896caf890eaab497172661489d98ad608124f2f3e39d3da430cffb2659b5bc28",
+          "size": 47197235
+        }
+      },
+      "network_status": "observed_no_forbidden_events",
+      "stage_observations": {
+        "execution": "unchecked",
+        "materials": "missing",
+        "numerical": "unchecked",
+        "registration": "confirmed",
+        "runtime": "unchecked"
+      },
+      "system": "alternative",
+      "training_execs_observed": 0,
+      "worker_status": "observed"
+    },
+    {
+      "attempt_id": "e7f746f2e85d4a8da04e1382d54180c7",
+      "case": "S2",
+      "functional_status": "passed",
+      "history_unchanged": true,
+      "immutable_original_hashes": {
+        "S2-core-audit.json": {
+          "sha256": "91c1f262a1061400fa1d077ea250d16ea3611152b096f4377d7d9f44f7ba3270",
+          "size": 186327
+        },
+        "S2-core/result.json": {
+          "sha256": "312379afeb90966b467699fe3e363c5f75e6e0ad897db0e5bb169ccf20c30747",
+          "size": 8475
+        },
+        "case-traces/005.trace": {
+          "sha256": "9886417b4e0b1fa9091fb9ff15a080ef312ce61c4c786ca34244765a789a1205",
+          "size": 30691397
+        }
+      },
+      "network_status": "observed_no_forbidden_events",
+      "stage_observations": {
+        "execution": "unchecked",
+        "materials": "failed",
+        "numerical": "unchecked",
+        "registration": "confirmed",
+        "runtime": "unchecked"
+      },
+      "system": "core",
+      "training_execs_observed": 0,
+      "worker_status": "observed"
+    },
+    {
+      "attempt_id": "62a984aa8b98456bafed5780bb2283ce",
+      "case": "S2",
+      "functional_status": "blocked",
+      "history_unchanged": null,
+      "immutable_original_hashes": {
+        "S2-alternative-audit.json": {
+          "sha256": "ff4077fc234dfcbac4542921a8053857198184d54935bbc7383dde01f1ee5d71",
+          "size": 235561
+        },
+        "S2-alternative/result.json": {
+          "sha256": "14ef8a7d486bcd189ce5b7cb7806f128e3ce48589f9f086cd778625fe0a48c64",
+          "size": 546
+        },
+        "case-traces/006.trace": {
+          "sha256": "3f935ffd3337db6a9cad1d0dbae01f1376003f8a14dc35e7961d3da125b465b2",
+          "size": 47226092
+        }
+      },
+      "network_status": "observed_no_forbidden_events",
+      "stage_observations": {
+        "execution": null,
+        "materials": null,
+        "numerical": null,
+        "registration": null,
+        "runtime": null
+      },
+      "system": "alternative",
+      "training_execs_observed": 0,
+      "worker_error_type": "PermissionError",
+      "worker_status": "blocked"
+    }
+  ],
+  "harness_commit": "fbc05347509eefc03273d0ccca9143ec930e95b7",
+  "protocol_sha256": "508e3891196cdedb347916235d24944fa80085e7ee48d7e4180c14966f37e82f",
+  "reason": "S2 alternative corruption injection raised PermissionError on owned mode-0444 DVC remote object; native corruption recovery and MLflow attempt were not reached",
+  "series": "post-amendment-v3",
+  "series_status": "stopped",
+  "unstarted_cases": [
+    "S3/core",
+    "S3/alternative"
+  ]
+}
