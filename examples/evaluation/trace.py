@@ -7,6 +7,26 @@ SEND={'connect','send','sendto','sendmsg','sendmmsg','write','writev','sendfile'
 INCOMING={'listen','accept','accept4'}
 
 
+def split_arguments(body):
+    """Split syscall arguments without splitting quoted data or FD annotations."""
+    text=body.split('(',1)[1];parts=[];start=0;depth=0;quoted=False;escaped=False
+    for i,char in enumerate(text):
+        if quoted:
+            if escaped:escaped=False
+            elif char=='\\':escaped=True
+            elif char=='"':quoted=False
+        elif char=='"':quoted=True
+        elif char=='<':depth+=1
+        elif char=='>' and depth:depth-=1
+        elif char==',' and depth==0:parts.append(text[start:i]);start=i+1
+    if quoted or depth:return None
+    parts.append(text[start:]);return parts
+
+def known_eventfd(label):
+    # strace 6.19 decodes only anon_inode:[eventfd] via /proc/PID/fdinfo.
+    # https://github.com/strace/strace/blob/v6.19/src/util.c
+    return re.fullmatch(r'\{eventfd-count=(?:0|0x[1-9a-f][0-9a-f]*), eventfd-id=[0-9]+, eventfd-semaphore=[01]\}',label) is not None
+
 def classify(text, completed=True):
     result={'status':'pass','inet_activity':[],'probes':[],'unix':[],'unknown':[],'unknown_events':[],
             'execs':[],'clones':[],'exits':{},'exit_groups':[]}
@@ -63,14 +83,14 @@ def classify(text, completed=True):
             if family=='inet':result['inet_activity'].append(body)
             elif family=='unix':result['unix'].append(body)
             if call in ('write','writev','sendfile','splice'):
-                arguments=body.split('(',1)[1].split(',');indexes={'write':(0,),'writev':(0,),'sendfile':(0,1),'splice':(0,2)}[call]
+                arguments=split_arguments(body);indexes={'write':(0,),'writev':(0,),'sendfile':(0,1),'splice':(0,2)}[call]
                 for i in indexes:
-                    descriptor=re.fullmatch(r'\s*\d+<(.+)>\s*',arguments[i]) if i<len(arguments) else None
+                    descriptor=re.fullmatch(r'\s*\d+<(.+)>\s*',arguments[i]) if arguments is not None and i<len(arguments) else None
                     label=descriptor.group(1) if descriptor else ''
                     # -yy may print socket:[inode] without its family. Such a
                     # label is not evidence of a regular file or a Unix socket.
                     known_anon=('anon_inode:[eventfd]','anon_inode:[eventpoll]','anon_inode:[timerfd]','anon_inode:[signalfd]','anon_inode:inotify')
-                    if not (label.startswith(('/', 'pipe:', 'UNIX', 'TCP:', 'TCPv6:', 'UDP:', 'UDPv6:')) or label in known_anon):
+                    if not (label.startswith(('/', 'pipe:', 'UNIX', 'TCP:', 'TCPv6:', 'UDP:', 'UDPv6:')) or label in known_anon or known_eventfd(label)):
                         unknown(pid,'descriptor',body,seq)
             elif family is None:
                 unknown(pid,'descriptor',body,seq)

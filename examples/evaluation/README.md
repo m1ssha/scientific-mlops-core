@@ -93,3 +93,24 @@ and required flags, omitting diagnostic text; a normalization note is included.
 Hashes of the original private command log and process trace provide references
 without publishing their paths or contents. The five raw result files are copied
 without text normalization and hashed after copying.
+
+## Instrumentation amendment after primary-01
+
+The first authorized series, `primary-01`, stopped at S0 alternative with the
+original functional audit `blocked` and auxiliary network `unchecked`. Its raw
+trace included one unresolved syscall and two writes whose FD annotation had
+`eventfd-count`, `eventfd-id` and `eventfd-semaphore`. The original audit and
+raw observations remain unchanged; this amendment does not retroactively change
+the result or authorize another series. The SHA-256 of the raw case trace is
+`869dbe1a5cbe70c167c6620323cad9b174a5bb72dd747bbaae44de092541e742`;
+the SHA-256 of the original alternative audit is
+`4b5355ba3db260c3d3d1e26c850cdfdb7dbf636ce37974c732803fb15d2769d5`.
+
+For future separately authorized runs, the parser recognizes only the exact
+three-field eventfd annotation produced for `anon_inode:[eventfd]` by
+[strace 6.19](https://github.com/strace/strace/blob/v6.19/src/util.c).
+The [Linux eventfd implementation](https://github.com/torvalds/linux/blob/master/fs/eventfd.c)
+shows the corresponding fdinfo fields; the [eventfd manual](https://man7.org/linux/man-pages/man2/eventfd.2.html)
+describes the counter. Generic `socket:[inode]`, malformed labels and unknown
+syscalls remain unchecked. A separate synthetic test creates a real `os.eventfd`
+and checks its strace annotation; it is not a Wine case.

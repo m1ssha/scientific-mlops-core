@@ -222,3 +222,27 @@ class TestTraceCompletenessAndPayload(unittest.TestCase):
     result=classify(text);self.assertEqual(result['status'],'unchecked');self.assertIsNone(attribute_unknowns(result,'/bin/test'))
     from harness import assess_trace
     audit=assess_trace(result,0,{'status':'observed'},'S1',{'cases':{'S1':{'training_calls_expected':0}}},'/bin/test');self.assertEqual(audit['functional_status'],'blocked')
+
+class TestEventFDAnnotation(unittest.TestCase):
+ def test_exact_eventfd_only_and_socket_remains_unknown(self):
+  from trace import attribute_unknowns
+  label='{eventfd-count=0, eventfd-id=137, eventfd-semaphore=0}'
+  valid=classify(complete('1 write(5<'+label+'>, "x", 8) = 8'));self.assertEqual(valid['status'],'pass')
+  self.assertEqual(classify(complete('1 write(5<{eventfd-count=0x1, eventfd-id=137, eventfd-semaphore=1}>, "x", 8) = 8'))['status'],'pass')
+  for bad in ('{eventfd-count=0, eventfd-id=137}',
+              '{eventfd-count=0, eventfd-id=137, eventfd-semaphore=2}',
+              '{eventfd-count=0, eventfd-id=137, eventfd-semaphore=0, socket=TCP}',
+              '{eventfd-count=0, eventfd-id=137, eventfd-semaphore=0}extra'):
+   with self.subTest(bad=bad):self.assertEqual(classify(complete('1 write(5<'+bad+'>, "x", 8) = 8'))['status'],'unchecked')
+  self.assertEqual(classify(complete('1 sendfile(4</tmp/out>, 3</tmp/in>, [0] => [8], 8) = 8'))['status'],'pass')
+  self.assertEqual(classify(complete('1 sendfile(5<'+label+'>, 3</tmp/in>, [0] => [8], 8) = 8'))['status'],'pass')
+  mixed=classify(complete('1 sendfile(5<'+label+'>, 7<socket:[123]>, NULL, 1) = 1'))
+  self.assertEqual(mixed['status'],'unchecked');self.assertIsNone(attribute_unknowns(mixed,'/bin/test'))
+ def test_real_os_eventfd_under_strace(self):
+  import shutil,subprocess,sys
+  if not shutil.which('strace') or not hasattr(__import__('os'),'eventfd'):self.skipTest('Linux eventfd/strace unavailable')
+  with tempfile.TemporaryDirectory() as tmp:
+   path=Path(tmp)/'trace';script='import os,struct;f=os.eventfd(0,0);os.write(f,struct.pack("Q",1));os.write(f,struct.pack("Q",1));os.close(f)'
+   result=subprocess.run(['strace','-f','-ttt','-yy','-s','4096','-e','trace=network,process,write,writev,sendfile,splice','-o',str(path),sys.executable,'-c',script],capture_output=True)
+   self.assertEqual(result.returncode,0);text=path.read_text();self.assertIn('eventfd-count=',text)
+   observation=classify(text);self.assertEqual(observation['status'],'pass',observation['unknown'])
