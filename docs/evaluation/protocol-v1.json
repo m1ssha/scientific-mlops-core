@@ -65,7 +65,24 @@
     }
   },
   "control": "C2=2.0 current without training; target historical C1=1.0",
-  "network": "strace observed process-tree traffic; no sandbox guarantee; report connect/send separately from bind/probes",
+  "failure_targets": {
+    "corruption": {
+      "byte_offset": 0,
+      "mutated_sha256": "bd893782ef39cd49a95ae1ca8f002f7ae3419957cd8d8d1ffde0ae2e09782812",
+      "xor": 1
+    },
+    "dataset": {
+      "path": "wine/data/wine.data",
+      "sha256": "6be6b1203f3d51df0b553a70e57b8a723cd405683958204f96d23d7cd6aea659",
+      "size": 10782
+    },
+    "wheel": {
+      "name": "cloudpickle-3.1.2-py3-none-any.whl",
+      "sha256": "9acb47f6afd73f60dc1df93bb801b472f05ff42fa6c84167d25cb206be1fbf4a",
+      "size": 22228
+    }
+  },
+  "network": "strace -f -yy -e trace=network,process; clean exec with no inherited network FDs; no Inet connect/send/listen/accept, socket/bind probes reported separately; incomplete or ambiguous trace unchecked; not sandbox",
   "no_claims": [
     "speed advantage",
     "statistical significance",
@@ -94,6 +111,11 @@
     "scientific-mlops-core+external-wine-repeat",
     "git+dvc+mlflow+scenario-adapter"
   ],
+  "timeouts_seconds": {
+    "case": 900,
+    "stage": 300,
+    "termination_grace": 5
+  },
   "tool_locks": {
     "dvc-tools.txt": "527f03ddd7304f847ed247af2a859b31b7aef3b983c0e5208049a837863868c6",
     "mlflow-tools.txt": "bdd6fa801f3d8f5f30a6f44f7a29b664594e9f9b76c4424ed8036df2100aaa2d"
