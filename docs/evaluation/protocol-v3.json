@@ -1,0 +1,177 @@
+{
+  "amendment_reason": "Observed pinned CLI non-root Go thread created only CLONE_THREAD descendants; v2 leaf-thread rule conflated thread children with separate processes. Original blocked audits remain immutable.",
+  "baseline_execution": [
+    "dvc repro --force --no-run-cache",
+    "git add required DVC descriptors and metrics",
+    "dvc exp save --name ATTEMPT_UUID"
+  ],
+  "case_order": [
+    [
+      "S0",
+      "core"
+    ],
+    [
+      "S0",
+      "alternative"
+    ],
+    [
+      "S1",
+      "core"
+    ],
+    [
+      "S1",
+      "alternative"
+    ],
+    [
+      "S2",
+      "core"
+    ],
+    [
+      "S2",
+      "alternative"
+    ],
+    [
+      "S3",
+      "core"
+    ],
+    [
+      "S3",
+      "alternative"
+    ]
+  ],
+  "cases": {
+    "S0": {
+      "execution": "succeeded",
+      "materials": "verified",
+      "mutation": "none",
+      "numerical": "pass",
+      "registration": "confirmed",
+      "runtime": "passed",
+      "training_calls_expected": 1
+    },
+    "S1": {
+      "mutation": "remove registered required dataset object from all permitted recovery copies",
+      "numerical": "unchecked",
+      "training_calls_expected": 0
+    },
+    "S2": {
+      "mutation": "change same-length bytes of that dataset object",
+      "numerical": "unchecked",
+      "training_calls_expected": 0
+    },
+    "S3": {
+      "mutation": "remove one required wheel from all permitted recovery copies",
+      "numerical": "unchecked",
+      "training_calls_expected": 0
+    }
+  },
+  "control": "C2=2.0 current without training; target historical C1=1.0",
+  "failure_targets": {
+    "corruption": {
+      "byte_offset": 0,
+      "mutated_sha256": "bd893782ef39cd49a95ae1ca8f002f7ae3419957cd8d8d1ffde0ae2e09782812",
+      "xor": 1
+    },
+    "dataset": {
+      "path": "wine/data/wine.data",
+      "sha256": "6be6b1203f3d51df0b553a70e57b8a723cd405683958204f96d23d7cd6aea659",
+      "size": 10782
+    },
+    "wheel": {
+      "name": "cloudpickle-3.1.2-py3-none-any.whl",
+      "sha256": "9acb47f6afd73f60dc1df93bb801b472f05ff42fa6c84167d25cb206be1fbf4a",
+      "size": 22228
+    }
+  },
+  "functional_attribution": {
+    "previous_outcomes": "primary-01 and primary-02 remain stopped/blocked; never reclassified or combined",
+    "requirements": [
+      "one exact pinned CLI exec in complete observed thread group",
+      "temporally ordered CLONE_THREAD lineage only",
+      "no observed non-thread child of any group member",
+      "no reexec or ambiguous/reused PID",
+      "unknown only non-root ??? after observed group exit_group",
+      "all observed thread terminals normal and ordered",
+      "all other unknowns block functional result; any unknown leaves network unchecked"
+    ],
+    "scope": "operational assumption for a byte-verified, source-audited, non-spawning leaf process; not proof about hidden processes"
+  },
+  "functional_execution_evidence": [
+    "fresh work and output destination",
+    "declared adapter calls and observed Wine execve/new PID/start-end",
+    "new Wine UUID and five new unedited outputs",
+    "full mandatory environment before and after training",
+    "independent raw Fraction oracle",
+    "unknown that makes Wine identity/count or input provenance ambiguous blocks functional result"
+  ],
+  "network": {
+    "role": "auxiliary observation, never part of a combined all-metrics-pass",
+    "status_rules": {
+      "any_unknown_or_incomplete_trace": "unchecked; no no-traffic or offline claim",
+      "complete_trace_with_no_forbidden_events": "observed_no_forbidden_events; not isolation guarantee",
+      "known_outgoing_INET_or_incoming_listen_accept": "traffic; stop series"
+    },
+    "symmetric_across_systems": true,
+    "unknown_does_not_imply_functional_success": true
+  },
+  "no_claims": [
+    "speed advantage",
+    "statistical significance",
+    "portability",
+    "generalization",
+    "novelty",
+    "global absence of alternate source copies"
+  ],
+  "oracle": {
+    "criterion": "exact raw predictions/counts/Fraction metrics under identical mandatory environment",
+    "function": "oracle",
+    "path": "examples/wine_catalog/validate_cycle.py",
+    "sha256": "7130855433ba33f9cdd29ea9a2ab72fe62d129eaf07fad30fd421ba0e810c33d"
+  },
+  "pre_trial_gate": [
+    "v3 amendment merged after independent review",
+    "exact v3 harness reviewed and committed before any v3 Wine case",
+    "versions/tool locks unchanged and match",
+    "every source byte verified",
+    "all attempted v2 and v3 runs retained, no retrospective reclassification"
+  ],
+  "primary_success_label": "functional criteria passed; auxiliary network reported independently",
+  "schema_version": 3,
+  "series_label": "post-amendment-v3",
+  "source": "Wine main-v1 saved reference; imported caller_reported, no setup training",
+  "status": "post_results_operational_amendment_requires_independent_review_and_main_freeze_before_new_series",
+  "stop_rules": [
+    "observed prohibited network event",
+    "ambiguous Wine execution or input provenance",
+    "functional stage fails declared criterion",
+    "harness defect or timeout",
+    "source history changed"
+  ],
+  "supersedes": "protocol-v2.json and evaluation-plan-v2.md unchanged; amendment after primary-01 (2 cases) and primary-02 (3 cases) stopped",
+  "systems": [
+    "scientific-mlops-core+external-wine-repeat",
+    "git+dvc+mlflow+scenario-adapter"
+  ],
+  "timeouts_seconds": {
+    "case": 900,
+    "stage": 300,
+    "termination_grace": 5
+  },
+  "tool_locks": {
+    "dvc-tools.txt": "527f03ddd7304f847ed247af2a859b31b7aef3b983c0e5208049a837863868c6",
+    "mlflow-tools.txt": "bdd6fa801f3d8f5f30a6f44f7a29b664594e9f9b76c4424ed8036df2100aaa2d"
+  },
+  "versions": {
+    "SQLAlchemy": "2.1.8",
+    "alembic": "1.20.1",
+    "core": "5c37e250896fbb67670e7a1897853f78baec144d",
+    "dvc": "3.67.1",
+    "git": "2.53.0",
+    "go": "1.27.3",
+    "mlflow-skinny": "3.18.0",
+    "platform": "8834058357a905dc016b1a7b6101b65cb43f846c",
+    "python": "3.12.15",
+    "sqlparse": "0.6.1",
+    "strace": "6.19"
+  }
+}

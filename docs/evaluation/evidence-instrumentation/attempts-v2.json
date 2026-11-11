@@ -1,0 +1,177 @@
+{
+  "note": "Original audits retained without reclassification. This index is schema-selected; full original logs remain private with these hashes. No new Wine runs performed to create the index.",
+  "schema_version": 1,
+  "series": [
+    {
+      "cases": [
+        {
+          "attempt_id": "6a45803af397471992eb64ac618d7dde",
+          "case": "S0",
+          "history_unchanged": true,
+          "immutable_original_hashes": {
+            "S0-core-audit.json": {
+              "sha256": "f0235311aa4289248a7517587b9f1522474ac1c4d11c8fb01141694af2531ad5",
+              "size": 252837
+            },
+            "S0-core/result.json": {
+              "sha256": "c991eb141ec70880b3deb021343b98805031d5e64bfc504733b514f91186ad08",
+              "size": 15519
+            },
+            "case-traces/001.trace": {
+              "sha256": "4c2a8a132e6034f886194dd4bc8dbedf55ae44d6b06064f0966f6fc4539dcf24",
+              "size": 61292671
+            }
+          },
+          "original_functional_status": "passed",
+          "original_network_status": "observed_no_forbidden_events",
+          "stage_observations": {
+            "execution": "succeeded",
+            "materials": "verified",
+            "numerical": "pass",
+            "registration": "confirmed",
+            "runtime": "passed"
+          },
+          "system": "core",
+          "training_execs_observed": 1,
+          "worker_status": "observed"
+        },
+        {
+          "attempt_id": "257a1b8dc00e4029a35af00a649d8e30",
+          "case": "S0",
+          "history_unchanged": true,
+          "immutable_original_hashes": {
+            "S0-alternative-audit.json": {
+              "sha256": "4b5355ba3db260c3d3d1e26c850cdfdb7dbf636ce37974c732803fb15d2769d5",
+              "size": 248138
+            },
+            "S0-alternative/result.json": {
+              "sha256": "659d79797774d6f700c3587aebbd07190fc8aa907cca7a506a56dbe36fa37fbc",
+              "size": 5539
+            },
+            "case-traces/002.trace": {
+              "sha256": "869dbe1a5cbe70c167c6620323cad9b174a5bb72dd747bbaae44de092541e742",
+              "size": 78503056
+            }
+          },
+          "original_functional_status": "blocked",
+          "original_network_status": "unchecked",
+          "stage_observations": {
+            "execution": "succeeded",
+            "materials": "verified",
+            "numerical": "pass",
+            "registration": "confirmed",
+            "runtime": "passed"
+          },
+          "system": "alternative",
+          "training_execs_observed": 1,
+          "worker_status": "observed"
+        }
+      ],
+      "cases_started": 2,
+      "harness_commit": "97d38128cc04c781fa8637024b75c83d3a3a2926",
+      "series": "primary-01",
+      "status": "stopped"
+    },
+    {
+      "cases": [
+        {
+          "attempt_id": "41e054b7c15b4acd916caf3d5066bcaa",
+          "case": "S0",
+          "history_unchanged": true,
+          "immutable_original_hashes": {
+            "S0-core-audit.json": {
+              "sha256": "0b12027749a479df65187a8d6c8fa37237e04f1fca08c2939a95fca70bbf77bd",
+              "size": 249858
+            },
+            "S0-core/result.json": {
+              "sha256": "bca33ef970353cd3d42d450f8ae6719a714f0560ee83f48a699ba8bcace52d7d",
+              "size": 15519
+            },
+            "case-traces/001.trace": {
+              "sha256": "88e66ec0c4e795b377416c4d579de00a9a7531a9ab4bb9fece2bb5d71d67e865",
+              "size": 61337560
+            }
+          },
+          "original_functional_status": "passed",
+          "original_network_status": "unchecked",
+          "stage_observations": {
+            "execution": "succeeded",
+            "materials": "verified",
+            "numerical": "pass",
+            "registration": "confirmed",
+            "runtime": "passed"
+          },
+          "system": "core",
+          "training_execs_observed": 1,
+          "worker_status": "observed"
+        },
+        {
+          "attempt_id": "6a3ccee263f04d039297feabe6600d84",
+          "case": "S0",
+          "history_unchanged": true,
+          "immutable_original_hashes": {
+            "S0-alternative-audit.json": {
+              "sha256": "030c0b9087b4edc9bcdd6756247658c1b1797249fb33c33d7664b3b0fe54edb0",
+              "size": 248827
+            },
+            "S0-alternative/result.json": {
+              "sha256": "c03600069df547efc76d9acd605e031505940dacdad4c410cfe5c484fff4e9b2",
+              "size": 5539
+            },
+            "case-traces/002.trace": {
+              "sha256": "8ea35a1c1b78b49c9660b8738a95f87e3bf734fa1710459a0c15cbd160ed845d",
+              "size": 78425825
+            }
+          },
+          "original_functional_status": "passed",
+          "original_network_status": "observed_no_forbidden_events",
+          "stage_observations": {
+            "execution": "succeeded",
+            "materials": "verified",
+            "numerical": "pass",
+            "registration": "confirmed",
+            "runtime": "passed"
+          },
+          "system": "alternative",
+          "training_execs_observed": 1,
+          "worker_status": "observed"
+        },
+        {
+          "attempt_id": "05b9835a972a40358f31b8e92cb570c2",
+          "case": "S1",
+          "history_unchanged": true,
+          "immutable_original_hashes": {
+            "S1-core-audit.json": {
+              "sha256": "1c858164b77554117989859d5fdd617832aeb212214237c5a5c2f3ccd6f7da28",
+              "size": 154090
+            },
+            "S1-core/result.json": {
+              "sha256": "63619492a2c0289fff0228c63a2fc3cb7f12db4d90d0877204fa20db22d9d67b",
+              "size": 8370
+            },
+            "case-traces/003.trace": {
+              "sha256": "42f06a452fe17d29de008de9fd199f8d81acfcf75e1120bdf0ad2f49b43eb44c",
+              "size": 30463592
+            }
+          },
+          "original_functional_status": "blocked",
+          "original_network_status": "unchecked",
+          "stage_observations": {
+            "execution": "unchecked",
+            "materials": "failed",
+            "numerical": "unchecked",
+            "registration": "confirmed",
+            "runtime": "unchecked"
+          },
+          "system": "core",
+          "training_execs_observed": 0,
+          "worker_status": "observed"
+        }
+      ],
+      "cases_started": 3,
+      "harness_commit": "bf4fabc048af60673d011d2d7a4954409c584e5d",
+      "series": "primary-02",
+      "status": "stopped"
+    }
+  ]
+}
